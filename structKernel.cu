@@ -11,6 +11,8 @@ typedef struct  strSparseVec
 } SparseVec;
 
 
+
+//simple kernel for adding two vectors
 extern "C" __global__ void VecAdd(const float* A, const float* B, float* C, int N)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -19,6 +21,7 @@ extern "C" __global__ void VecAdd(const float* A, const float* B, float* C, int 
 }
 
 
+//kernel only for testing how to pass pointer to STRUCT from .net 
 extern "C" __global__ void StructPass(const SparseVec* vec,float* out,int N)
 {
 
@@ -40,7 +43,8 @@ extern "C" __global__ void StructPass(const SparseVec* vec,float* out,int N)
 }
 
 
-
+//Kernel with pointer to Struct which contains sparse vector values and indices
+//not efficient
 extern "C" __global__ void DotProd(const SparseVec* vec,float* out,int mainIdx, int N)
 {
 	__shared__ SparseVec  vec1;
@@ -87,7 +91,7 @@ extern "C" __global__ void DotProd(const SparseVec* vec,float* out,int mainIdx, 
 
 }
 
-
+//
 extern "C" __global__ void DotProd2(const SparseVec* vec,float* out,int mainIdx, int N)
 {
 	__shared__ SparseVec  vec1;
@@ -227,7 +231,7 @@ extern "C" __global__ void DotProd2(const SparseVec* vec,float* out,int mainIdx,
 
 
 
-
+//sparse matrix vector multiplication matrix in ELLPack format
 extern "C" __global__ void DotProdEllPack(const float* vals,
 										  const int* idx,
 										  const float* mainVec,
@@ -258,6 +262,8 @@ extern "C" __global__ void DotProdEllPack(const float* vals,
 
 texture<float,1,cudaReadModeElementType> texRef;
 
+//sparse matrix vector multiplication matrix in ELLPack format, vector in texture "cache"
+//better preformace than previous DotProdEllPack kernel
 extern "C" __global__ void DotProdEllPackCached(const float* vals,
 										  const int* idx,
 										  float* out,
@@ -286,6 +292,8 @@ extern "C" __global__ void DotProdEllPackCached(const float* vals,
 }
 
 
+//simple multiplication one element from matrix times one element from vector,
+//only for testing multiplciation speed - its realy fast!
 extern "C" __global__ void SegmentedMulCached(const float* vals,
 										  const int* idx,
 										  float* out,
@@ -301,6 +309,9 @@ extern "C" __global__ void SegmentedMulCached(const float* vals,
 	}
 }
 
+
+//sparse matrix-vector multiplication based one experiments from above kernel, 
+//quite fast
 extern "C" __global__ void DotProdSegmentedCached(const float* vals,
 										  const int* idx,
 										  const int* vecLenght,
