@@ -49,8 +49,8 @@ namespace TestDotProduct
        static int maxIndex = 0;
        static int maxVal = 10;
 
-       static int avgElements = 30;
-       static int stdElements = 10;
+       static int avgElements = 120;
+       static int stdElements = 40;
        static int displayCount = 5;
 
        static int threadsPerBlock = 128;

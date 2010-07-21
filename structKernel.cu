@@ -345,7 +345,7 @@ extern "C" __global__ void DotProdSegmentedCached(const float* vals,
 
 
 
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 128
 
 #define WARP_SIZE 32
 extern "C" __global__ void spmv_csr_vector_kernel(const float * Ax,
