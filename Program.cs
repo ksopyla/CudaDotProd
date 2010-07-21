@@ -44,16 +44,16 @@ namespace TestDotProduct
 
 
 
-       static int N = 512*128;
+       static int N = 512*256;
        static int mainIndex = 0;
        static int maxIndex = 0;
        static int maxVal = 10;
 
-       static int avgElements = 120;
-       static int stdElements = 40;
+       static int avgElements = 30;
+       static int stdElements = 10;
        static int displayCount = 5;
 
-       static int threadsPerBlock = 256;
+       static int threadsPerBlock = 128;
        static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
 
         static void Main(string[] args)
@@ -63,15 +63,15 @@ namespace TestDotProduct
 
             //CuAddVec();
             //CuStructPass();
-          //  float[] good = NormalDotProd();
+            float[] good = NormalDotProd();
 //
             Console.WriteLine("-----------------------------------");
             //float[] prod1 = CuDotProd();
-          //  CuDotProd();
+            CuDotProd();
 
           //  Console.WriteLine("-----------------------------------");
             //float[] prod2=CuDotProdEllPack();
-          //  CuDotProdEllPack();
+            CuDotProdEllPack();
 
            // Console.WriteLine("-----------------------------------");
 

@@ -1,0 +1,71 @@
+C:\cuda\samples64\NVIDIA Corporation\NVIDIA GPU Computing SDK\C\bin\win64\Releas
+e\deviceQuery.exe Starting...
+
+ CUDA Device Query (Runtime API) version (CUDART static linking)
+
+There is 1 device supporting CUDA
+
+Device 0: "GeForce 9400 GT"
+  CUDA Driver Version:                           3.0
+  CUDA Runtime Version:                          3.0
+  CUDA Capability Major revision number:         1
+  CUDA Capability Minor revision number:         1
+  Total amount of global memory:                 519634944 bytes
+  Number of multiprocessors:                     2
+  Number of cores:                               16
+  Total amount of constant memory:               65536 bytes
+  Total amount of shared memory per block:       16384 bytes
+  Total number of registers available per block: 8192
+  Warp size:                                     32
+  Maximum number of threads per block:           512
+  Maximum sizes of each dimension of a block:    512 x 512 x 64
+  Maximum sizes of each dimension of a grid:     65535 x 65535 x 1
+  Maximum memory pitch:                          2147483647 bytes
+  Texture alignment:                             256 bytes
+  Clock rate:                                    1.38 GHz
+  Concurrent copy and execution:                 Yes
+  Run time limit on kernels:                     No
+  Integrated:                                    No
+  Support host page-locked memory mapping:       No
+  Compute mode:                                  Default (multiple host threads
+can use this device simultaneously)
+
+deviceQuery, CUDA Driver = CUDART, CUDA Driver Version = 3.0, CUDA Runtime Versi
+on = 3.0, NumDevs = 1, Device = GeForce 9400 GT
+
+
+PASSED
+
+Press <Enter> to Quit...
+-----------------------------------------------------------
+
+[bandwidthTest]
+C:\cuda\samples64\NVIDIA Corporation\NVIDIA GPU Computing SDK\C\bin\win64\Releas
+e\bandwidthTest.exe Starting...
+
+Running on...
+
+ Device 0: GeForce 9400 GT
+ Quick Mode
+
+ Host to Device Bandwidth, 1 Device(s), Paged memory
+   Transfer Size (Bytes)        Bandwidth(MB/s)
+   33554432                     1787.5
+
+ Device to Host Bandwidth, 1 Device(s), Paged memory
+   Transfer Size (Bytes)        Bandwidth(MB/s)
+   33554432                     2115.1
+
+ Device to Device Bandwidth, 1 Device(s)
+   Transfer Size (Bytes)        Bandwidth(MB/s)
+   33554432                     8064.1
+
+
+[bandwidthTest] - Test results:
+PASSED
+
+
+Press <Enter> to Quit...
+-----------------------------------------------------------
+
+

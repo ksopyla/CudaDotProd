@@ -1,0 +1,511 @@
+Cuda MUL test on geforce 9400
+
+Test1
+---------------------------------
+Params
+ static int N = 512*256;
+       static int mainIndex = 0;
+       static int maxIndex = 0;
+       static int maxVal = 10;
+
+       static int avgElements = 120;
+       static int stdElements = 40;
+       static int displayCount = 5;
+
+       static int threadsPerBlock = 256;
+       static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+
+Results
+array init
+init takes 00:00:01.2429417
+Normal Dot products with mainIndex 0 and 131072-vectors takes 00:00:00.3902415
+0-3880,826
+1-450,8545
+2-548,7302
+3-495,1175
+4-573,6159
+-----------------------------------
+init and copy data
+copy and init takes 00:00:17.4228459
+start computation
+Dot products with mainIndex 0 and 131072-vectors takes 110,3903 ms stopwatch tim
+e 00:00:00.1107940 ms
+0-3880,825
+1-450,8544
+2-548,7302
+3-495,1175
+4-573,6158
+init arrays
+init arrays takes 00:00:01.7014394
+copy array to device takes 00:00:01.8067668
+start computation
+EllPack Dot products with mainIndex 0 and 131072-vectors takes 76,30922 ms stopw
+atch time 00:00:00.0763671 ms
+0-3880,825
+1-450,8544
+2-548,7302
+3-495,1175
+4-573,6158
+init arrays
+Init takes 00:00:01.4960602
+copy to device takes 00:00:01.6094405
+start computation
+EllPack Cached Dot products with mainIndex 0 and 131072-vectors takes 26,69069 m
+s stopwatch time 00:00:00.0267765 ms
+0-3880,825
+1-450,8544
+2-548,7302
+3-495,1175
+4-573,6158
+-----------------------------------
+init arrays
+Init takes 00:00:01.4977685
+copy to device takes 00:00:01.6319916
+start computation
+segmented Cached Dot products with mainIndex 0 and 131072-vectors takes 50,58566
+ ms stopwatch time 00:00:00.0506480 ms
+0-3880,825
+1-450,8544
+2-548,7302
+3-495,1175
+4-573,6158
+-----------------------------------
+init arrays
+Init takes 00:00:01.3537580
+copy to device takes 00:00:01.4486536
+start computation
+csr vector Dot products with mainIndex 0 and 131072-vectors takes 109,7325 ms st
+opwatch time 00:00:00.1098329 ms
+0-3880,826
+1-450,8544
+2-548,7301
+3-495,1175
+4-573,6158
+-----------------------------------
+
+
+Test2
+------------------------------------------------------------
+Params
+static int N = 512*256;
+       static int mainIndex = 0;
+       static int maxIndex = 0;
+       static int maxVal = 10;
+
+       static int avgElements = 60;
+       static int stdElements = 20;
+       static int displayCount = 5;
+
+       static int threadsPerBlock = 256;
+       static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+
+Results
+
+array init
+init takes 00:00:00.6528619
+Normal Dot products with mainIndex 0 and 131072-vectors takes 00:00:00.1937459
+0-2097,73
+1-439,446
+2-260,51
+3-388,3019
+4-180,5643
+-----------------------------------
+init and copy data
+copy and init takes 00:00:16.8665846
+start computation
+Dot products with mainIndex 0 and 131072-vectors takes 69,89532 ms stopwatch tim
+e 00:00:00.0703014 ms
+0-2097,73
+1-439,4459
+2-260,51
+3-388,3018
+4-180,5643
+init arrays
+init arrays takes 00:00:00.7361750
+copy array to device takes 00:00:00.7911394
+start computation
+EllPack Dot products with mainIndex 0 and 131072-vectors takes 38,18864 ms stopw
+atch time 00:00:00.0382442 ms
+0-2097,73
+1-439,4459
+2-260,51
+3-388,3018
+4-180,5643
+init arrays
+Init takes 00:00:00.7401715
+copy to device takes 00:00:00.8001307
+start computation
+EllPack Cached Dot products with mainIndex 0 and 131072-vectors takes 10,23094 m
+s stopwatch time 00:00:00.0102841 ms
+0-2097,73
+1-439,4459
+2-260,51
+3-388,3018
+4-180,5643
+-----------------------------------
+init arrays
+Init takes 00:00:00.7227329
+copy to device takes 00:00:00.7956973
+start computation
+segmented Cached Dot products with mainIndex 0 and 131072-vectors takes 25,17565
+ ms stopwatch time 00:00:00.0252661 ms
+0-2097,73
+1-439,446
+2-260,51
+3-388,3018
+4-180,5643
+-----------------------------------
+init arrays
+Init takes 00:00:00.7934046
+copy to device takes 00:00:00.8448177
+start computation
+csr vector Dot products with mainIndex 0 and 131072-vectors takes 50,80275 ms st
+opwatch time 00:00:00.0508556 ms
+0-2097,73
+1-439,4459
+2-260,51
+3-388,3019
+4-180,5643
+-----------------------------------
+
+
+Test3
+-------------------------------------------------------------------------
+Params
+
+static int N = 512*256;
+       static int mainIndex = 0;
+       static int maxIndex = 0;
+       static int maxVal = 10;
+
+       static int avgElements = 30;
+       static int stdElements = 10;
+       static int displayCount = 5;
+
+       static int threadsPerBlock = 256;
+       static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+	   
+Results
+
+array init
+init takes 00:00:00.3461314
+Normal Dot products with mainIndex 0 and 131072-vectors takes 00:00:00.0986062
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+-----------------------------------
+init and copy data
+copy and init takes 00:00:17.5015588
+start computation
+Dot products with mainIndex 0 and 131072-vectors takes 39,9799 ms stopwatch time
+ 00:00:00.0403428 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+init arrays
+init arrays takes 00:00:00.3680422
+copy array to device takes 00:00:00.3971545
+start computation
+EllPack Dot products with mainIndex 0 and 131072-vectors takes 22,96723 ms stopw
+atch time 00:00:00.0230225 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+init arrays
+Init takes 00:00:00.3840652
+copy to device takes 00:00:00.4136631
+start computation
+EllPack Cached Dot products with mainIndex 0 and 131072-vectors takes 5,116544 m
+s stopwatch time 00:00:00.0051952 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+-----------------------------------
+init arrays
+Init takes 00:00:00.4256866
+copy to device takes 00:00:00.4644735
+start computation
+segmented Cached Dot products with mainIndex 0 and 131072-vectors takes 12,7384
+ms stopwatch time 00:00:00.0128390 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+-----------------------------------
+init arrays
+Init takes 00:00:00.4295797
+copy to device takes 00:00:00.4568080
+start computation
+csr vector Dot products with mainIndex 0 and 131072-vectors takes 28,8047 ms sto
+pwatch time 00:00:00.0288836 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+-----------------------------------
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Test4 - block size 128
+-------------------------------------
+Params
+       static int N = 512*256;
+       static int mainIndex = 0;
+       static int maxIndex = 0;
+       static int maxVal = 10;
+
+       static int avgElements = 120;
+       static int stdElements = 40;
+       static int displayCount = 5;
+
+       static int threadsPerBlock = 128;
+       static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+Results
+
+array init
+init takes 00:00:01.2567935
+Normal Dot products with mainIndex 0 and 131072-vectors takes 00:00:00.3915266
+0-3880,826
+1-450,8545
+2-548,7302
+3-495,1175
+4-573,6159
+-----------------------------------
+init and copy data
+copy and init takes 00:00:17.2551159
+start computation
+Dot products with mainIndex 0 and 131072-vectors takes 108,3119 ms stopwatch tim
+e 00:00:00.1089660 ms
+0-3880,825
+1-450,8544
+2-548,7302
+3-495,1175
+4-573,6158
+init arrays
+init arrays takes 00:00:01.6269280
+copy array to device takes 00:00:01.7339612
+start computation
+EllPack Dot products with mainIndex 0 and 131072-vectors takes 74,02163 ms stopw
+atch time 00:00:00.0741052 ms
+0-3880,825
+1-450,8544
+2-548,7302
+3-495,1175
+4-573,6158
+init arrays
+Init takes 00:00:01.4897723
+copy to device takes 00:00:01.6008570
+start computation
+EllPack Cached Dot products with mainIndex 0 and 131072-vectors takes 26,66061 m
+s stopwatch time 00:00:00.0270268 ms
+0-3880,825
+1-450,8544
+2-548,7302
+3-495,1175
+4-573,6158
+-----------------------------------
+init arrays
+Init takes 00:00:01.5589477
+copy to device takes 00:00:01.6980430
+start computation
+segmented Cached Dot products with mainIndex 0 and 131072-vectors takes 51,26515
+ ms stopwatch time 00:00:00.0516190 ms
+0-3880,825
+1-450,8544
+2-548,7302
+3-495,1175
+4-573,6158
+-----------------------------------
+init arrays
+Init takes 00:00:01.3585927
+copy to device takes 00:00:01.4569215
+start computation
+csr vector Dot products with mainIndex 0 and 131072-vectors takes 49,29965 ms st
+opwatch time 00:00:00.0496087 ms
+0-3880,826
+1-450,8544
+2-548,7301
+3-495,1175
+4-0
+-----------------------------------
+
+
+
+Test5
+=====================================================
+
+Params
+
+       static int N = 512*256;
+       static int mainIndex = 0;
+       static int maxIndex = 0;
+       static int maxVal = 10;
+
+       static int avgElements = 60;
+       static int stdElements = 20;
+       static int displayCount = 5;
+
+       static int threadsPerBlock = 128;
+       static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+
+Results
+	  array init
+init takes 00:00:00.6638707
+Normal Dot products with mainIndex 0 and 131072-vectors takes 00:00:00.1941433
+0-2097,73
+1-439,446
+2-260,51
+3-388,3019
+4-180,5643
+-----------------------------------
+init and copy data
+copy and init takes 00:00:16.8842749
+start computation
+Dot products with mainIndex 0 and 131072-vectors takes 69,37158 ms stopwatch tim
+e 00:00:00.0697814 ms
+0-2097,73
+1-439,4459
+2-260,51
+3-388,3018
+4-180,5643
+init arrays
+init arrays takes 00:00:00.8170671
+copy array to device takes 00:00:00.8716036
+start computation
+EllPack Dot products with mainIndex 0 and 131072-vectors takes 38,25718 ms stopw
+atch time 00:00:00.0383140 ms
+0-2097,73
+1-439,4459
+2-260,51
+3-388,3018
+4-180,5643
+init arrays
+Init takes 00:00:00.7423863
+copy to device takes 00:00:00.7984498
+start computation
+EllPack Cached Dot products with mainIndex 0 and 131072-vectors takes 10,27398 m
+s stopwatch time 00:00:00.0103542 ms
+0-2097,73
+1-439,4459
+2-260,51
+3-388,3018
+4-180,5643
+-----------------------------------
+init arrays
+Init takes 00:00:00.8075258
+copy to device takes 00:00:00.8805765
+start computation
+segmented Cached Dot products with mainIndex 0 and 131072-vectors takes 25,15885
+ ms stopwatch time 00:00:00.0252169 ms
+0-2097,73
+1-439,446
+2-260,51
+3-388,3018
+4-180,5643
+-----------------------------------
+init arrays
+Init takes 00:00:00.7865129
+copy to device takes 00:00:00.8447100
+start computation
+csr vector Dot products with mainIndex 0 and 131072-vectors takes 23,57946 ms st
+opwatch time 00:00:00.0236386 ms
+0-2097,73
+1-439,4459
+2-260,51
+3-388,3019
+4-0
+-----------------------------------
+
+Test6
+=============================================================
+Params
+
+       static int N = 512*256;
+       static int mainIndex = 0;
+       static int maxIndex = 0;
+       static int maxVal = 10;
+
+       static int avgElements = 30;
+       static int stdElements = 10;
+       static int displayCount = 5;
+
+       static int threadsPerBlock = 128;
+       static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+Results 
+
+array init
+init takes 00:00:00.3577044
+Normal Dot products with mainIndex 0 and 131072-vectors takes 00:00:00.0989538
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+-----------------------------------
+init and copy data
+copy and init takes 00:00:17.6958745
+start computation
+Dot products with mainIndex 0 and 131072-vectors takes 39,75766 ms stopwatch tim
+e 00:00:00.0401401 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+init arrays
+init arrays takes 00:00:00.4197059
+copy array to device takes 00:00:00.4501340
+start computation
+EllPack Dot products with mainIndex 0 and 131072-vectors takes 23,00029 ms stopw
+atch time 00:00:00.0230555 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+init arrays
+Init takes 00:00:00.4045147
+copy to device takes 00:00:00.4378576
+start computation
+EllPack Cached Dot products with mainIndex 0 and 131072-vectors takes 5,145152 m
+s stopwatch time 00:00:00.0054807 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+-----------------------------------
+init arrays
+Init takes 00:00:00.4698042
+copy to device takes 00:00:00.5093597
+start computation
+segmented Cached Dot products with mainIndex 0 and 131072-vectors takes 12,72813
+ ms stopwatch time 00:00:00.0131802 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-60,50675
+-----------------------------------
+init arrays
+Init takes 00:00:00.4317750
+copy to device takes 00:00:00.4592617
+start computation
+csr vector Dot products with mainIndex 0 and 131072-vectors takes 13,99242 ms st
+opwatch time 00:00:00.0142861 ms
+0-1036,787
+1-29,23214
+2-182,7059
+3-58,26716
+4-0
+-----------------------------------
