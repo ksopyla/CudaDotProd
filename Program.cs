@@ -44,7 +44,7 @@ namespace TestDotProduct
         static int N = 512 * 256;
         static int mainIndex = 0;
         static int maxIndex = 0;
-        static int maxVal = 10;
+        static int maxVal = 1;
 
         static int avgElements = 120;
         static int stdElements = 40;
@@ -54,56 +54,73 @@ namespace TestDotProduct
         static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
 
         static float ErrorEpsilon = 0.01f;
-        static float Gamma = 2;
+        static float Gamma = 1f/16;
 
         static void Main(string[] args)
         {
 
 
+           // CudaDotProductExperiments();
+
+
+            float[] good = NormalRBFDotProd();
+            Console.WriteLine("---------------------------------------");
+
+            float[] rbf1 = CuRBFEllPackTexCached();
+            TestEquality(good, rbf1);
+            Console.WriteLine("---------------------------------------");
+
+            float[] rbf2 = CuRBFCSRCached();
+            TestEquality(good, rbf2);
+            Console.WriteLine("---------------------------------------");
+
+            Console.ReadKey();
+
+        }
+
+        private static void CudaDotProductExperiments()
+        {
 
             //CuAddVec();
             //CuStructPass();
             float[] good = NormalDotProd();
             //
             Console.WriteLine("-----------------------------------");
-            
+
             //float[] prod1 = CuDotProd();
             //TestEquality(good, prod1);
             //prod1 = null;
 
-            
+
             //Console.WriteLine("-----------------------------------");
             //float[] prod2 = CuDotProdEllPack();
             //TestEquality(good, prod2);
             //prod2 = null;
 
             //Console.WriteLine("-----------------------------------");
-            
-            //float[] prod3 = CuDotProdEllPackTexCached();
-            //TestEquality(good, prod3);
-            //prod3 = null;
-            
+
+            float[] prod3 = CuDotProdEllPackTexCached();
+            TestEquality(good, prod3);
+            prod3 = null;
+
             //Console.WriteLine("-----------------------------------");
 
-            
+
             //float[] prod4 = CuDotProdSegmentedTexCached();
             // SegmentedMulCached();
             // Console.WriteLine("-----------------------------------");
 
-            float[] prod4 = DotProdSegmentedCached();
-            TestEquality(good, prod4);
-            prod4 = null;
+            //float[] prod4 = DotProdSegmentedCached();
+            //TestEquality(good, prod4);
+            //prod4 = null;
 
             Console.WriteLine("-----------------------------------");
 
-            float[] prod5 = DotProdCSRCached();
+            float[] prod5 = CuDotProdCSRCached();
             TestEquality(good, prod5);
             prod5 = null;
 
             Console.WriteLine("-----------------------------------");
-            
-            Console.ReadKey();
-
         }
 
         private unsafe static float[] CuDotProd()
@@ -626,8 +643,13 @@ namespace TestDotProduct
         }
 
 
+        /// <summary>
+        /// Gives bad results!!!
+        /// </summary>
+        /// <returns></returns>
         private static float[] DotProdSegmentedCached()
         {
+            //todo: kernel compute bad values!
 
             //always the same values
             Random rnd = new Random(1);
@@ -708,6 +730,8 @@ namespace TestDotProduct
 
             Console.WriteLine("copy to device takes {0}", t.Elapsed);
 
+
+
             cuda.SetFunctionBlockShape(structPassFunc, threadsPerBlock, 1, 1);
 
             int offset = 0;
@@ -740,7 +764,11 @@ namespace TestDotProduct
 
             Stopwatch timer = Stopwatch.StartNew();
             cuda.RecordEvent(start);
-            cuda.Launch(structPassFunc, blocksPerGrid, 1);
+
+            //different then normal, because many vectors are computed not per row 
+            //but per element
+            int blocs = (vecStartIdx+threadsPerBlock-1)/threadsPerBlock;
+            cuda.Launch(structPassFunc, blocs, 1);
 
 
             cuda.RecordEvent(end);
@@ -774,7 +802,7 @@ namespace TestDotProduct
         }
 
 
-        private static float[] DotProdCSRCached()
+        private static float[] CuDotProdCSRCached()
         {
 
             //always the same values
@@ -1035,7 +1063,7 @@ namespace TestDotProduct
 
             Stopwatch timer = Stopwatch.StartNew();
 
-            NormalRBFProduct(vectors, mainIndex, ref output);
+            RBFProduct(vectors, mainIndex, ref output);
 
             timer.Stop();
 
@@ -1052,13 +1080,16 @@ namespace TestDotProduct
             return output;
         }
 
-        private static void NormalRBFProduct(SparseVec[] vectors, int mainIndex, ref float[] output)
+        private static void RBFProduct(SparseVec[] vectors, int mainIndex, ref float[] output)
         {
             SparseVec vec1 = vectors[mainIndex];
             float vec1Dot = DotProd(vec1, vec1);
             for (int i = 0; i < vectors.Length; i++)
             {
-                output[i] = (float)Math.Exp(-Gamma * (DotProd(vectors[i], vectors[i]) + vec1Dot - 2 * DotProd(vec1, vectors[i])));
+                float dotVecI = DotProd(vectors[i], vectors[i]);
+                float dotCross = DotProd(vec1, vectors[i]);
+                float sum = dotVecI + vec1Dot - 2 * dotCross;
+                 output[i] = (float)Math.Exp(-Gamma * sum);
             }
         }
 
@@ -1271,9 +1302,9 @@ namespace TestDotProduct
             // load module
             CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "structKernel.cubin"));
 
-
-
             CUfunction structPassFunc = cuda.GetModuleFunction("RBFEllPackCached");
+            //RBFEllPackCached
+            //RBFNaiveEllPackCached
 
             int maxRowSize = avgElements + stdElements - 1;
 
@@ -1281,7 +1312,7 @@ namespace TestDotProduct
             Stopwatch t = Stopwatch.StartNew();
             float[] vecVals = new float[N * maxRowSize];
             int[] vecIdx = new int[N * maxRowSize];
-
+            float[] selfDot = new float[N];
 
             maxIndex = 0;
             for (int i = 0; i < N; i++)
@@ -1295,6 +1326,8 @@ namespace TestDotProduct
                 {
                     int m = z * N + i;
                     vecVals[m] = vals[z];
+
+                    selfDot[i] += vals[z] * vals[z];
                 }
 
                 //Array.Copy(vals,0,vecVals,i*maxRowSize,vals.Length);
@@ -1318,16 +1351,6 @@ namespace TestDotProduct
                 mainVec[idx] = val;
             }
 
-            float[] selfDot = new float[N];
-            //remeber that vals are column major order
-            for (int i = 0; i < N; i++)
-            {
-                for (int z = 0; z < maxRowSize; z++)
-                {
-                    float val = vecVals[i + N * z];
-                    selfDot[i] += val * val;
-                }
-            }
 
             Console.WriteLine("Init takes {0}", t.Elapsed);
             t.Start();
@@ -1338,8 +1361,6 @@ namespace TestDotProduct
             CUarray cuArr = cuda.CreateArray(mainVec);
 
             cuda.CopyHostToArray(cuArr, mainVec, 0);
-
-
             //CUDAArrayDescriptor cuDesc = new CUDAArrayDescriptor();
             //cuDesc.Format = CUArrayFormat.Float;
             //cuDesc.NumChannels = 1;
@@ -1363,7 +1384,8 @@ namespace TestDotProduct
             offset += IntPtr.Size;
             cuda.SetParameter(structPassFunc, offset, idxPtr.Pointer);
             offset += IntPtr.Size;
-
+            cuda.SetParameter(structPassFunc, offset, selfDotPtr.Pointer);
+            offset += IntPtr.Size;
 
             cuda.SetParameter(structPassFunc, offset, dOutput.Pointer);
             offset += IntPtr.Size;
@@ -1371,6 +1393,163 @@ namespace TestDotProduct
             cuda.SetParameter(structPassFunc, offset, (uint)maxRowSize);
             offset += sizeof(int);
             cuda.SetParameter(structPassFunc, offset, (uint)N);
+            offset += sizeof(int);
+
+            cuda.SetParameter(structPassFunc, offset, (uint)mainIndex);
+            offset += sizeof(int);
+
+            cuda.SetParameter(structPassFunc, offset, Gamma);
+            offset += sizeof(float);
+
+            cuda.SetParameterSize(structPassFunc, (uint)offset);
+
+            Console.WriteLine("start computation");
+
+            CUevent start = cuda.CreateEvent();
+            CUevent end = cuda.CreateEvent();
+
+            Stopwatch timer = Stopwatch.StartNew();
+            cuda.RecordEvent(start);
+            cuda.Launch(structPassFunc, blocksPerGrid, 1);
+
+            cuda.RecordEvent(end);
+
+            cuda.SynchronizeContext();
+            //cuda.SynchronizeEvent(end);
+            timer.Stop();
+            float naiveTime = cuda.ElapsedTime(start, end);
+
+            Console.Write("RBF products ellpack with mainIndex {0} and {1}-vectors takes {2} ms stopwatch time {3} ms", mainIndex, N, naiveTime, timer.Elapsed);
+
+            cuda.CopyDeviceToHost(dOutput, output);
+
+            int lenght = Math.Min(displayCount, N);
+            Console.WriteLine();
+            for (int i = 0; i < lenght; i++)
+            {
+                Console.WriteLine("{0}-{1}", i, output[i]);
+            }
+
+            cuda.Free(valsPtr);
+            cuda.Free(idxPtr);
+            cuda.Free(selfDotPtr);
+            cuda.Free(dOutput);
+            cuda.DestroyArray(cuArr);
+            cuda.DestroyTexture(cuTexRef);
+
+            return output;
+        }
+
+
+        private static float[] CuRBFCSRCached()
+        {
+
+            //always the same values
+            Random rnd = new Random(1);
+
+            CUDA cuda = new CUDA(0, true);
+
+            // load module
+            CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "structKernel.cubin"));
+
+            CUfunction structPassFunc = cuda.GetModuleFunction("RBFspmv_csr_vector");
+
+            int maxRowSize = avgElements + stdElements - 1;
+
+            Console.WriteLine("init arrays");
+            Stopwatch t = Stopwatch.StartNew();
+            List<float> vecValsL = new List<float>(N * maxRowSize / 2);
+            List<int> vecIdxL = new List<int>(N * maxRowSize / 2);
+            List<int> vecLenghtL = new List<int>(N);
+
+            float[] vecVals;
+            int[] vecIdx;
+            int[] vecLenght;
+            float[] selfDot = new float[N];
+
+            maxIndex = 0;
+            int vecStartIdx = 0;
+            for (int i = 0; i < N; i++)
+            {
+                int vecSize = avgElements + i % stdElements;
+
+                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                vecValsL.AddRange(vals);
+
+                for (int z = 0; z < vals.Length; z++)
+                {
+                    selfDot[i] += vals[z] * vals[z];
+                }
+                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                vecIdxL.AddRange(index);
+
+
+                vecLenghtL.Add(vecStartIdx);
+                vecStartIdx += vecSize;
+
+            }
+            //for last index
+            vecLenghtL.Add(vecStartIdx);
+
+            vecVals = vecValsL.ToArray();
+            vecIdx = vecIdxL.ToArray();
+            vecLenght = vecLenghtL.ToArray();
+
+            float[] mainVec = new float[maxIndex + 1];
+
+            for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
+            {
+                int idx = vecIdx[j];
+                float val = vecVals[j];
+                mainVec[idx] = val;
+            }
+            Console.WriteLine("Init takes {0}", t.Elapsed);
+            t.Start();
+
+            CUdeviceptr valsPtr = cuda.CopyHostToDevice(vecVals);
+            CUdeviceptr idxPtr = cuda.CopyHostToDevice(vecIdx);
+            CUdeviceptr vecLenghtPtr = cuda.CopyHostToDevice(vecLenght);
+            CUdeviceptr selfDotPtr = cuda.CopyHostToDevice(selfDot);
+
+            //copy to texture
+            CUarray cuArr = cuda.CreateArray(mainVec);
+            cuda.CopyHostToArray(cuArr, mainVec, 0);
+            CUtexref cuTexRef = cuda.GetModuleTexture(module, "texRef");
+            cuda.SetTextureFlags(cuTexRef, 0);
+            cuda.SetTextureArray(cuTexRef, cuArr);
+
+
+
+            float[] output = new float[N];
+            CUdeviceptr dOutput = cuda.Allocate(output);
+
+            Console.WriteLine("copy to device takes {0}", t.Elapsed);
+
+            cuda.SetFunctionBlockShape(structPassFunc, threadsPerBlock, 1, 1);
+
+            int offset = 0;
+            cuda.SetParameter(structPassFunc, offset, valsPtr.Pointer);
+            offset += IntPtr.Size;
+            cuda.SetParameter(structPassFunc, offset, idxPtr.Pointer);
+            offset += IntPtr.Size;
+
+            cuda.SetParameter(structPassFunc, offset, vecLenghtPtr.Pointer);
+            offset += IntPtr.Size;
+            cuda.SetParameter(structPassFunc, offset, selfDotPtr.Pointer);
+            offset += IntPtr.Size;
+
+            cuda.SetParameter(structPassFunc, offset, dOutput.Pointer);
+            offset += IntPtr.Size;
+
+            cuda.SetParameter(structPassFunc, offset, (uint)N);
+            offset += sizeof(int);
+            cuda.SetParameter(structPassFunc, offset, (uint)mainIndex);
+            offset += sizeof(int);
+            cuda.SetParameter(structPassFunc, offset, Gamma);
+            offset += sizeof(float);
+
+
+            cuda.SetParameter(structPassFunc, offset, (uint)vecStartIdx);
             offset += sizeof(int);
             cuda.SetParameterSize(structPassFunc, (uint)offset);
 
@@ -1392,7 +1571,7 @@ namespace TestDotProduct
             timer.Stop();
             float naiveTime = cuda.ElapsedTime(start, end);
 
-            Console.Write("EllPack Cached Dot products with mainIndex {0} and {1}-vectors takes {2} ms stopwatch time {3} ms", mainIndex, N, naiveTime, timer.Elapsed);
+            Console.Write("csr vector Dot products with mainIndex {0} and {1}-vectors takes {2} ms stopwatch time {3} ms", mainIndex, N, naiveTime, timer.Elapsed);
 
             cuda.CopyDeviceToHost(dOutput, output);
 
@@ -1406,9 +1585,14 @@ namespace TestDotProduct
             cuda.Free(valsPtr);
             cuda.Free(idxPtr);
             cuda.Free(dOutput);
+            cuda.Free(selfDotPtr);
+            cuda.Free(vecLenghtPtr);
+            cuda.DestroyArray(cuArr);
+            cuda.DestroyTexture(cuTexRef);
+
+
             return output;
         }
-
 
         public static void TestEquality(float[] arr1, float[] arr2)
         {

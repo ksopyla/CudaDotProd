@@ -390,19 +390,81 @@ extern "C" __global__ void spmv_csr_vector_kernel(const float * Ax,
         // first thread writes warp result
         if (thread_lane == 0)
             y[row] += sdata[threadIdx.x];
+		
+			
     }
 }
 
+
+extern "C" __global__ void RBFspmv_csr_vector(const float * Ax,
+									   const int * Aj, 
+									   const int * Ap, 
+									   const float* selfDot,
+									   float * y,
+									   const int num_rows,
+									   const int yIdx,
+									   const float gamma,
+									   int numElements)
+{
+    __shared__ float sdata[BLOCK_SIZE + 16];                          // padded to avoid reduction ifs
+    __shared__ int ptrs[BLOCK_SIZE/WARP_SIZE][2];
+    
+    const int thread_id   = BLOCK_SIZE * blockIdx.x + threadIdx.x;  // global thread index
+    const int thread_lane = threadIdx.x & (WARP_SIZE-1);            // thread index within the warp
+    const int warp_id     = thread_id   / WARP_SIZE;                // global warp index
+    const int warp_lane   = threadIdx.x / WARP_SIZE;                // warp index within the CTA
+    const int num_warps   = (BLOCK_SIZE / WARP_SIZE) * gridDim.x;   // total number of active warps
+
+    for(int row = warp_id; row < num_rows; row += num_warps){
+        // use two threads to fetch Ap[row] and Ap[row+1]
+        // this is considerably faster than the straightforward version
+        if(thread_lane < 2)
+            ptrs[warp_lane][thread_lane] = Ap[row + thread_lane];
+        const int row_start = ptrs[warp_lane][0];                   //same as: row_start = Ap[row];
+        const int row_end   = ptrs[warp_lane][1];                   //same as: row_end   = Ap[row+1];
+
+        // compute local sum
+        float sum = 0;
+        for(int jj = row_start + thread_lane; jj < row_end; jj += WARP_SIZE)
+            sum += Ax[jj] * tex1D(texRef,Aj[jj]);
+
+        // reduce local sums to row sum (ASSUME: warpsize 32)
+        sdata[threadIdx.x] = sum;
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x + 16]; __syncthreads(); 
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  8]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  4]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  2]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  1]; __syncthreads();
+       
+
+
+        // first thread writes warp result
+		if (thread_lane == 0){
+         //   y[row] += sdata[threadIdx.x];
+			y[row]=expf(-gamma*(selfDot[row]+selfDot[yIdx]-2*sdata[threadIdx.x]));
+		}
+    }
+}
+
+
+
+
 extern "C" __global__ void RBFEllPackCached(const float* vals,
 										  const int* idx,
+										  const float* selfDot,
 										  float* out,
 										  int maxRowSize,
 										  const int N,
-										  const float* selfDot,
+										  
 										  const int yIdx,
 										  const float gamma)
 {
+
+	__shared__ float yDot;
+
 	int row = blockDim.x*blockIdx.x+threadIdx.x;
+	if(threadIdx.x==0)
+		yDot=selfDot[yIdx];
 
 	if(row<N){
 		float dot=0;
@@ -417,7 +479,8 @@ extern "C" __global__ void RBFEllPackCached(const float* vals,
 			}
 		}
 
-		__syncthreads();
-		out[row]=expf(gamma*(selfDot[row]+selfDot[yIdx]-2*dot));
+		//__syncthreads();
+		//out[row]=expf(-gamma*(selfDot[row]+selfDot[yIdx]-2*dot));
+		out[row]=expf(-gamma*(selfDot[row]+yDot-2*dot));
 	}
 }
