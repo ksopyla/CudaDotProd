@@ -345,7 +345,7 @@ extern "C" __global__ void DotProdSegmentedCached(const float* vals,
 
 
 
-#define BLOCK_SIZE 128
+#define BLOCK_SIZE 256
 
 #define WARP_SIZE 32
 extern "C" __global__ void spmv_csr_vector_kernel(const float * Ax,
@@ -391,4 +391,33 @@ extern "C" __global__ void spmv_csr_vector_kernel(const float * Ax,
         if (thread_lane == 0)
             y[row] += sdata[threadIdx.x];
     }
+}
+
+extern "C" __global__ void RBFEllPackCached(const float* vals,
+										  const int* idx,
+										  float* out,
+										  int maxRowSize,
+										  const int N,
+										  const float* selfDot,
+										  const int yIdx,
+										  const float gamma)
+{
+	int row = blockDim.x*blockIdx.x+threadIdx.x;
+
+	if(row<N){
+		float dot=0;
+		for(int i=0;i<maxRowSize;i++)
+		{
+			int col = idx[N*i+row];
+			float val = vals[N*i+row];
+
+			if(val!=0)
+			{
+				dot+=val* tex1D(texRef,col); 
+			}
+		}
+
+		__syncthreads();
+		out[row]=expf(gamma*(selfDot[row]+selfDot[yIdx]-2*dot));
+	}
 }
