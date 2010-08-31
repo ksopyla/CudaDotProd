@@ -39,30 +39,39 @@ namespace TestDotProduct
 
         }
 
-
-
+        /// <summary>
+        /// number of vectors
+        /// </summary>
         static int N = 512 * 256;
         static int mainIndex = 0;
         static int maxIndex = 0;
         static int maxVal = 1;
 
+        /// <summary>
+        /// number of nonzero values
+        /// </summary>
         static int avgElements = 120;
+        /// <summary>
+        /// +- nonzero values
+        /// </summary>
         static int stdElements = 40;
         static int displayCount = 5;
 
         static int threadsPerBlock = 256;
         static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
 
+        /// <summary>
+        /// error for chcecking results
+        /// </summary>
         static float ErrorEpsilon = 0.01f;
         static float Gamma = 1f/16;
 
         static void Main(string[] args)
         {
+            
+            CudaDotProductExperiments();
 
-
-           // CudaDotProductExperiments();
-
-
+            /*
             float[] good = NormalRBFDotProd();
             Console.WriteLine("---------------------------------------");
 
@@ -73,7 +82,7 @@ namespace TestDotProduct
             float[] rbf2 = CuRBFCSRCached();
             TestEquality(good, rbf2);
             Console.WriteLine("---------------------------------------");
-
+            */
             Console.ReadKey();
 
         }
@@ -87,15 +96,15 @@ namespace TestDotProduct
             //
             Console.WriteLine("-----------------------------------");
 
-            //float[] prod1 = CuDotProd();
-            //TestEquality(good, prod1);
-            //prod1 = null;
+            float[] prod1 = CuDotProd();
+            TestEquality(good, prod1);
+            prod1 = null;
 
 
-            //Console.WriteLine("-----------------------------------");
-            //float[] prod2 = CuDotProdEllPack();
-            //TestEquality(good, prod2);
-            //prod2 = null;
+            Console.WriteLine("-----------------------------------");
+            float[] prod2 = CuDotProdEllPack();
+            TestEquality(good, prod2);
+            prod2 = null;
 
             //Console.WriteLine("-----------------------------------");
 
@@ -107,14 +116,14 @@ namespace TestDotProduct
 
 
             //float[] prod4 = CuDotProdSegmentedTexCached();
-            // SegmentedMulCached();
-            // Console.WriteLine("-----------------------------------");
+            //SegmentedMulCached();
+            //Console.WriteLine("-----------------------------------");
 
-            //float[] prod4 = DotProdSegmentedCached();
-            //TestEquality(good, prod4);
-            //prod4 = null;
+            float[] prod4 = DotProdSegmentedCached();
+            TestEquality(good, prod4);
+            prod4 = null;
 
-            Console.WriteLine("-----------------------------------");
+            //Console.WriteLine("-----------------------------------");
 
             float[] prod5 = CuDotProdCSRCached();
             TestEquality(good, prod5);
