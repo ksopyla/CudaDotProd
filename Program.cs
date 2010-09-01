@@ -92,7 +92,9 @@ namespace TestDotProduct
 
         private static void InitCudaDriver()
         {
-            CUDA cuda = new CUDA(true);
+            CUDA cuda = new CUDA(false);
+
+            cuda.Init();
 
             int cudaDrv=cuda.GetDeviceCount();
 
@@ -113,9 +115,16 @@ namespace TestDotProduct
                 Console.WriteLine("Compute: {0}", cuDevice[i].ComputeCapability);
 
                 DeviceProperties prop = cuDevice[i].Properties;
+                
+                int processors = cuda.GetDeviceAttribute(CUDeviceAttribute.MultiProcessorCount, cuDevice[i].Handle);
                 Console.WriteLine("Clock rate: {0}", prop.ClockRate);
+                Console.WriteLine("Number of processors: {0}", processors);
                 Console.WriteLine("Memory: {0} GB", (cuDevice[i].TotalMemory+0.0)/(1024*1024));
                 Console.WriteLine("Constant Memory: {0}MB", (prop.TotalConstantMemory+0.0)/1024);
+
+
+
+                
                 
 
             }
@@ -865,6 +874,8 @@ namespace TestDotProduct
 
             Console.WriteLine("init arrays");
             Stopwatch t = Stopwatch.StartNew();
+            
+            //temp lists for values, indices and vecotr lenght
             List<float> vecValsL = new List<float>(N * maxRowSize / 2);
             List<int> vecIdxL = new List<int>(N * maxRowSize / 2);
             List<int> vecLenghtL = new List<int>(N);
