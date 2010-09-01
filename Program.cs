@@ -68,10 +68,13 @@ namespace TestDotProduct
 
         static void Main(string[] args)
         {
-            
-            CudaDotProductExperiments();
 
-            /*
+
+            InitCudaDriver();
+
+           // CudaDotProductExperiments();
+
+            
             float[] good = NormalRBFDotProd();
             Console.WriteLine("---------------------------------------");
 
@@ -82,8 +85,40 @@ namespace TestDotProduct
             float[] rbf2 = CuRBFCSRCached();
             TestEquality(good, rbf2);
             Console.WriteLine("---------------------------------------");
-            */
+        
             Console.ReadKey();
+
+        }
+
+        private static void InitCudaDriver()
+        {
+            CUDA cuda = new CUDA(true);
+
+            int cudaDrv=cuda.GetDeviceCount();
+
+            if (cudaDrv < 1)
+            {
+                Console.WriteLine("Cuda device not found");
+                System.Environment.Exit(-1);
+            }
+
+            Console.WriteLine("Found {0} cuda devices",cudaDrv);
+            Device[] cuDevice = cuda.Devices;
+
+            for (int i = 0; i < cuDevice.Length; i++)
+            {
+                Console.WriteLine("-------------------");
+                Console.WriteLine("Cuda device nr {0} details:", i + 1);
+                Console.WriteLine("Name: {0}", cuDevice[i].Name);
+                Console.WriteLine("Compute: {0}", cuDevice[i].ComputeCapability);
+
+                DeviceProperties prop = cuDevice[i].Properties;
+                Console.WriteLine("Clock rate: {0}", prop.ClockRate);
+                Console.WriteLine("Memory: {0} GB", (cuDevice[i].TotalMemory+0.0)/(1024*1024));
+                Console.WriteLine("Constant Memory: {0}MB", (prop.TotalConstantMemory+0.0)/1024);
+                
+
+            }
 
         }
 
@@ -145,6 +180,8 @@ namespace TestDotProduct
             Random rnd = new Random(1);
 
             CUDA cuda = new CUDA(0, true);
+
+           
 
             // load module
             cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "structKernel.cubin"));
