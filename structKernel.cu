@@ -389,7 +389,8 @@ extern "C" __global__ void spmv_csr_vector_kernel(const float * Ax,
 
         // first thread writes warp result
         if (thread_lane == 0)
-            y[row] += sdata[threadIdx.x];
+            //y[row] += sdata[threadIdx.x];
+			y[row] = sdata[threadIdx.x];
 		
 			
     }
