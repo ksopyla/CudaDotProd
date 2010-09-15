@@ -397,6 +397,8 @@ extern "C" __global__ void spmv_csr_vector_kernel(const float * Ax,
 }
 
 
+
+
 extern "C" __global__ void RBFspmv_csr_vector(const float * Ax,
 									   const int * Aj, 
 									   const int * Ap, 

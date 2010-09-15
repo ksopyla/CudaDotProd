@@ -54,6 +54,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cudaSVMKernels.cu">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="structKernel.cu">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -67,6 +70,6 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>nvcc structKernel.cu --cubin   -ccbin "c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin" -m32</PostBuildEvent>
+    <PostBuildEvent>nvcc structKernel.cu cudaSVMKernels.cu --cubin   -ccbin "c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin" -m32</PostBuildEvent>
   </PropertyGroup>
 </Project>
