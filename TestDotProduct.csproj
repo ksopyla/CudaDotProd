@@ -52,11 +52,13 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SparseMatrixTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cudaSVMKernels.cu">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="matrixKernels.cu" />
     <None Include="structKernel.cu">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -348,6 +348,109 @@ extern "C" __global__ void DotProdSegmentedCached(const float* vals,
 #define BLOCK_SIZE 256
 
 #define WARP_SIZE 32
+
+
+//cuda kernel for linerar dot product with writecombined memory
+extern "C" __global__ void spmv_csr_vector_kernel_wc(const float * Ax,
+									   const int * Aj, 
+									   const int * Ap, 
+									   const float * mainVector,
+									   float * y,
+									   const int num_rows,
+									   int numElements)
+{
+    __shared__ float sdata[BLOCK_SIZE + 16];                          // padded to avoid reduction ifs
+    __shared__ int ptrs[BLOCK_SIZE/WARP_SIZE][2];
+    
+    const int thread_id   = BLOCK_SIZE * blockIdx.x + threadIdx.x;  // global thread index
+    const int thread_lane = threadIdx.x & (WARP_SIZE-1);            // thread index within the warp
+    const int warp_id     = thread_id   / WARP_SIZE;                // global warp index
+    const int warp_lane   = threadIdx.x / WARP_SIZE;                // warp index within the CTA
+    const int num_warps   = (BLOCK_SIZE / WARP_SIZE) * gridDim.x;   // total number of active warps
+
+    for(int row = warp_id; row < num_rows; row += num_warps){
+        // use two threads to fetch Ap[row] and Ap[row+1]
+        // this is considerably faster than the straightforward version
+        if(thread_lane < 2)
+            ptrs[warp_lane][thread_lane] = Ap[row + thread_lane];
+        const int row_start = ptrs[warp_lane][0];                   //same as: row_start = Ap[row];
+        const int row_end   = ptrs[warp_lane][1];                   //same as: row_end   = Ap[row+1];
+
+        // compute local sum
+        float sum = 0;
+        for(int jj = row_start + thread_lane; jj < row_end; jj += WARP_SIZE)
+            sum += Ax[jj] * mainVector[Aj[jj]];
+
+        // reduce local sums to row sum (ASSUME: warpsize 32)
+        sdata[threadIdx.x] = sum;
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x + 16]; __syncthreads(); 
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  8]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  4]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  2]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  1]; __syncthreads();
+       
+
+
+        // first thread writes warp result
+        if (thread_lane == 0)
+            //y[row] += sdata[threadIdx.x];
+			y[row] = sdata[threadIdx.x];
+		
+			
+    }
+}
+
+
+
+
+extern "C" __global__ void spmv_csr_scalar_kernel(const float * Ax,
+									   const int * Aj, 
+									   const int * Ap, 
+									   float * y,
+									   const int num_rows)
+{
+
+	//#define large_grid_thread_id(void) ((blockDim.x * (blockIdx.x + blockIdx.y*gridDim.x) + threadIdx.x))
+    //#define large_grid_thread_id(void) ((__umul24(blockDim.x,blockIdx.x + __umul24(blockIdx.y,gridDim.x)) + threadIdx.x))
+    // row index
+    //const int row = blockDim.x * (blockIdx.x + blockIdx.y*gridDim.x) + threadIdx.x;
+    
+	const int row=blockDim.x*blockIdx.x+2*threadIdx.x;
+	const int row2=blockDim.x*blockIdx.x+2*threadIdx.x+1;
+
+	//!!this is mistake, can't check ony row2<num_rows
+    if(row2 < num_rows){     
+        float sum = 0;//y[row];
+		float sum2=0;
+
+        const int row_start = Ap[row];
+        const int row_end   = Ap[row+1];
+		const int rowDiff = row_end - row_start;
+
+		const int row_end2   = Ap[row+2];
+    
+		float xVec=0;
+        for (int jj = row_start; jj < row_end2; jj++){   
+			xVec = tex1Dfetch(texRef,Aj[jj]);
+
+			if(xVec!=0)
+			{
+				if(jj<row_end)
+					sum += Ax[jj] * xVec;
+				if( (jj+rowDiff)<row_end2)
+					sum2+= Ax[jj+rowDiff] * xVec;
+					
+			}
+            //sum += Ax[jj] * tex1Dfetch(texRef,Aj[jj]);
+        }
+
+        y[row] = sum;
+		y[row2] = sum2;
+    }
+}
+
+
+//csr vector kernel for linear dot product
 extern "C" __global__ void spmv_csr_vector_kernel(const float * Ax,
 									   const int * Aj, 
 									   const int * Ap, 
@@ -375,7 +478,7 @@ extern "C" __global__ void spmv_csr_vector_kernel(const float * Ax,
         // compute local sum
         float sum = 0;
         for(int jj = row_start + thread_lane; jj < row_end; jj += WARP_SIZE)
-            sum += Ax[jj] * tex1D(texRef,Aj[jj]);
+            sum += Ax[jj] * tex1Dfetch(texRef,Aj[jj]);
 
         // reduce local sums to row sum (ASSUME: warpsize 32)
         sdata[threadIdx.x] = sum;

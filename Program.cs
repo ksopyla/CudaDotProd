@@ -54,7 +54,7 @@ namespace TestDotProduct
         /// <summary>
         /// +- nonzero values
         /// </summary>
-        static int stdElements = 40;
+        static int stdElements = 300;
         static int displayCount = 5;
 
         static int threadsPerBlock = 256;
@@ -67,7 +67,7 @@ namespace TestDotProduct
         static float Gamma = 1f / 16;
 
         static int StartingIndex = 2;
-        static int Repetition = 1000;
+        static int Repetition = 100;
 
         static void Main(string[] args)
         {
@@ -139,7 +139,7 @@ namespace TestDotProduct
 
             //CuAddVec();
             //CuStructPass();
-           // float[] good = NormalDotProd(Repetition);
+            float[] good = NormalDotProd(Repetition);
             
             Console.WriteLine("-----------------------------------");
 
@@ -172,15 +172,21 @@ namespace TestDotProduct
 
             //Console.WriteLine("-----------------------------------");
 
-            float[] prod5 = CuDotProdCSRCached(Repetition);
+            float[] prod5 = CuDotProdCached(Repetition, "spmv_csr_vector_kernel");
            // TestEquality(good, prod5);
             
 
             Console.WriteLine("-----------------------------------");
 
-            float[] prod6 = CuDotProdCSRwriteCombined(Repetition);
-            TestEquality(prod5, prod6);
-            prod5 = null;
+            float[] prod6 = CuDotProdCached(Repetition, "spmv_csr_scalar_kernel");
+            // TestEquality(good, prod5);
+
+
+            Console.WriteLine("-----------------------------------");
+
+            //float[] prod6 = CuDotProdCSRwriteCombined(Repetition);
+            //TestEquality(prod5, prod6);
+            
 
             Console.WriteLine("-----------------------------------");
         }
@@ -867,7 +873,7 @@ namespace TestDotProduct
         }
 
 
-        private static float[] CuDotProdCSRCached(int repetition)
+        private static float[] CuDotProdCached(int repetition,string moduleFunction)
         {
 
             //always the same values
@@ -878,7 +884,7 @@ namespace TestDotProduct
             // load module
             CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "structKernel.cubin"));
 
-            CUfunction cuFunc = cuda.GetModuleFunction("spmv_csr_vector_kernel");
+            CUfunction cuFunc = cuda.GetModuleFunction(moduleFunction);
 
             int maxRowSize = avgElements + stdElements - 1;
 
@@ -988,12 +994,7 @@ namespace TestDotProduct
             for (int k = 0; k < repetition; k++)
             {
                 //normal memory management
-                for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
-                {
-                    int idx = vecIdx[j];
-                    float val = vecVals[j];
-                    mainVec[idx] = val;
-                }
+                InitMainVector(vecVals, vecIdx, vecLenght, mainVec);
 
 
                 ////copy to texture
@@ -1006,13 +1007,20 @@ namespace TestDotProduct
 
 
                 cuda.SynchronizeContext();
-                //cuda.CopyDeviceToHost(dOutput, output);
+               // cuda.CopyDeviceToHost(dOutput, output);
                  Marshal.Copy(outputPtr2, output, 0, N);
 
-                mainIndex++;
+                
                 //mainVec = new float[maxIndex + 1];
                 //clear previous vector values
-                Array.Clear(mainVec, 0, mainVec.Length);
+               Array.Clear(mainVec, 0, mainVec.Length);
+                //for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
+                //{
+                //    int idx = vecIdx[j];
+                //    float val = vecVals[j];
+                //    mainVec[idx] = 0;
+                //}
+                mainIndex++;
             }
 
             cuda.RecordEvent(end);
@@ -1025,7 +1033,7 @@ namespace TestDotProduct
             timer.Stop();
             float naiveTime = cuda.ElapsedTime(start, end);
 
-            Console.Write("csr vector Dot products with mainIndex {0} and {1}-vectors takes {2} ms stopwatch time {3} ms", mainIndex, N, naiveTime, timer.Elapsed);
+            Console.Write("Dot products with kernel {0}, mainIndex {1} and {2}-vectors takes {3} ms stopwatch time {4} ms",moduleFunction, mainIndex, N, naiveTime, timer.Elapsed);
 
 
             int lenght = Math.Min(displayCount, N);
@@ -1040,12 +1048,25 @@ namespace TestDotProduct
             cuda.Free(dOutput);
             cuda.Free(vecLenghtPtr);
             //cuda.DestroyArray(cuArr);
+            //cuda.FreeHost(outputPtr2);
+            //cuda.Free(dOutput);
+            //Marshal.FreeHGlobal(
             cuda.Free(mainVecPtr);
             cuda.DestroyTexture(cuTexRef);
             cuda.DestroyEvent(start);
             cuda.DestroyEvent(end);
 
             return output;
+        }
+
+        private static void InitMainVector(float[] vecVals, int[] vecIdx, int[] vecLenght, float[] mainVec)
+        {
+            for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
+            {
+                int idx = vecIdx[j];
+                float val = vecVals[j];
+                mainVec[idx] = val;
+            }
         }
 
 
