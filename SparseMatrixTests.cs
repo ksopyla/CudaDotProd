@@ -18,6 +18,9 @@ namespace TestDotProduct
         public const int Rows = 4;
         public const int Cols = 4;
 
+        public const int displayCount=5;
+        public const int maxVal = 1;
+
         public static int avgElements= 40;
         public static int stdElements = 20;
 
@@ -139,23 +142,23 @@ namespace TestDotProduct
             Console.Write("Matrix products with kernel {0}, takes {1} ms stopwatch time {2} ms", moduleFunction, cudaTime, timer.Elapsed);
 
 
-            int lenght = Math.Min(displayCount, N);
+            int lenght = Math.Min(displayCount, Rows);
             Console.WriteLine();
             for (int i = 0; i < lenght; i++)
             {
                 Console.WriteLine("{0}-{1}", i, output[i]);
             }
 
-            cuda.Free(valsPtr);
-            cuda.Free(idxPtr);
+            cuda.Free(AValsPtr);
+            cuda.Free(AIdxPtr);
+            cuda.Free(ALenghtPtr);
+
+            cuda.Free(BValsPtr);
+            cuda.Free(BIdxPtr);
+            cuda.Free(BLenghtPtr);
+
             cuda.Free(dOutput);
-            cuda.Free(vecLenghtPtr);
-            //cuda.DestroyArray(cuArr);
-            //cuda.FreeHost(outputPtr2);
-            //cuda.Free(dOutput);
-            //Marshal.FreeHGlobal(
-            cuda.Free(mainVecPtr);
-            cuda.DestroyTexture(cuTexRef);
+          
             cuda.DestroyEvent(start);
             cuda.DestroyEvent(end);
 
@@ -178,10 +181,10 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals =Helpers.InitValues(i, vecSize, maxVal);
                 vecValsL.AddRange(vals);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 vecIdxL.AddRange(index);
 
 

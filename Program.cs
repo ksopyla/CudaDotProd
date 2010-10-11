@@ -223,9 +223,9 @@ namespace TestDotProduct
 
                 int vecSize = avgElements + i % stdElements;
                 vectors[i].size = vecSize;
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
 
                 CUdeviceptr valsPtr = cuda.CopyHostToDevice(vals);
                 CUdeviceptr idxPtr = cuda.CopyHostToDevice(index);
@@ -322,7 +322,7 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
 
                 //values are column-major aligment
                 for (int z = 0; z < vals.Length; z++)
@@ -333,7 +333,7 @@ namespace TestDotProduct
 
                 //Array.Copy(vals,0,vecVals,i*maxRowSize,vals.Length);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 //Array.Copy(index, 0, vecIdx, i * maxRowSize, index.Length);
                 for (int z = 0; z < index.Length; z++)
                 {
@@ -456,7 +456,7 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
 
                 //values are column-major aligment
                 for (int z = 0; z < vals.Length; z++)
@@ -467,7 +467,7 @@ namespace TestDotProduct
 
                 //Array.Copy(vals,0,vecVals,i*maxRowSize,vals.Length);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 //Array.Copy(index, 0, vecIdx, i * maxRowSize, index.Length);
                 for (int z = 0; z < index.Length; z++)
                 {
@@ -601,10 +601,10 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
                 vecValsL.AddRange(vals);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 vecIdxL.AddRange(index);
 
 
@@ -752,10 +752,10 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
                 vecValsL.AddRange(vals);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 vecIdxL.AddRange(index);
 
 
@@ -877,7 +877,7 @@ namespace TestDotProduct
         {
 
             //always the same values
-            Random rnd = new Random(1);
+            
 
             CUDA cuda = new CUDA(0, true);
 
@@ -906,10 +906,10 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
                 vecValsL.AddRange(vals);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 vecIdxL.AddRange(index);
 
 
@@ -1103,10 +1103,10 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
                 vecValsL.AddRange(vals);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 vecIdxL.AddRange(index);
 
 
@@ -1284,9 +1284,9 @@ namespace TestDotProduct
 
                 int vecSize = avgElements + i % stdElements;
                 vectors[i].size = vecSize;
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
 
                 vectors[i].indices = index;
                 vectors[i].values = vals;
@@ -1380,9 +1380,9 @@ namespace TestDotProduct
 
                 int vecSize = avgElements + i % stdElements;
                 vectors[i].size = vecSize;
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
 
                 vectors[i].indices = index;
                 vectors[i].values = vals;
@@ -1423,37 +1423,7 @@ namespace TestDotProduct
             }
         }
 
-        private static int[] InitIndices(int i, int size, ref int maxIndex, Random rnd)
-        {
-            int[] index = new int[size];
-
-            int min = 0;
-            int step = 10;
-            int idx = 0;
-            for (int k = 0; k < size; k++)
-            {
-                idx = rnd.Next(min, min + step);
-                min = idx + 1;
-                index[k] = idx;
-            }
-
-            if (idx > maxIndex)
-                maxIndex = idx;
-            return index;
-        }
-
-        private static float[] InitValues(int i, int size, int maxVal, Random rnd)
-        {
-            float[] vals = new float[size];
-
-
-            for (int k = 0; k < size; k++)
-            {
-                vals[k] = (float)rnd.NextDouble() * maxVal;
-            }
-
-            return vals;
-        }
+        
 
 
         private unsafe static void CuStructPass()
@@ -1649,7 +1619,7 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
 
                 //values are column-major aligment
                 for (int z = 0; z < vals.Length; z++)
@@ -1662,7 +1632,7 @@ namespace TestDotProduct
 
                 //Array.Copy(vals,0,vecVals,i*maxRowSize,vals.Length);
 
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 //Array.Copy(index, 0, vecIdx, i * maxRowSize, index.Length);
                 for (int z = 0; z < index.Length; z++)
                 {
@@ -1803,14 +1773,14 @@ namespace TestDotProduct
             {
                 int vecSize = avgElements + i % stdElements;
 
-                float[] vals = InitValues(i, vecSize, maxVal, rnd);
+                float[] vals = Helpers.InitValues(i, vecSize, maxVal);
                 vecValsL.AddRange(vals);
 
                 for (int z = 0; z < vals.Length; z++)
                 {
                     selfDot[i] += vals[z] * vals[z];
                 }
-                int[] index = InitIndices(i, vecSize, ref maxIndex, rnd);
+                int[] index = Helpers.InitIndices(i, vecSize, ref maxIndex);
                 vecIdxL.AddRange(index);
 
 
