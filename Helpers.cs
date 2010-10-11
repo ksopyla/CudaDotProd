@@ -8,13 +8,14 @@ namespace TestDotProduct
     {
 
        public static int RandomSeed = 1;
+       public static int step = 10;
         public static int[] InitIndices(int i, int size, ref int maxIndex)
         {
             Random rnd = new Random(RandomSeed);
             int[] index = new int[size];
 
             int min = 0;
-            int step = 10;
+            
             int idx = 0;
             for (int k = 0; k < size; k++)
             {

@@ -73,21 +73,13 @@ namespace TestDotProduct
         {
 
 
-            InitCudaDriver();
+            DetailCudaDriver();
 
-            CudaDotProductExperiments();
+           // CudaDotProductExperiments();
 
+           // CudaRBFProductExperiments();
 
-            //float[] good = NormalRBFDotProd();
-            //Console.WriteLine("---------------------------------------");
-
-            //float[] rbf1 = CuRBFEllPackTexCached();
-            //TestEquality(good, rbf1);
-            //Console.WriteLine("---------------------------------------");
-
-            //float[] rbf2 = CuRBFCSRCached();
-            //TestEquality(good, rbf2);
-            //Console.WriteLine("---------------------------------------");
+            CudaSparseMatrixExperiments();
 
 
             Console.WriteLine();
@@ -96,7 +88,26 @@ namespace TestDotProduct
 
         }
 
-        private static void InitCudaDriver()
+        private static void CudaSparseMatrixExperiments()
+        {
+            SparseMatrixMatrixProd.CRSSparseMM(1, "spmm_csr_naive");
+        }
+
+        private static void CudaRBFProductExperiments()
+        {
+            float[] good = NormalRBFDotProd();
+            Console.WriteLine("---------------------------------------");
+
+            float[] rbf1 = CuRBFEllPackTexCached();
+            TestEquality(good, rbf1);
+            Console.WriteLine("---------------------------------------");
+
+            float[] rbf2 = CuRBFCSRCached();
+            TestEquality(good, rbf2);
+            Console.WriteLine("---------------------------------------");
+        }
+
+        private static void DetailCudaDriver()
         {
             CUDA cuda = new CUDA(false);
 
@@ -172,13 +183,13 @@ namespace TestDotProduct
 
             //Console.WriteLine("-----------------------------------");
 
-            float[] prod5 = CuDotProdCached(Repetition, "spmv_csr_vector_kernel");
+            float[] prod5 = CuDotProdCRSCached(Repetition, "spmv_csr_vector_kernel");
            // TestEquality(good, prod5);
             
 
             Console.WriteLine("-----------------------------------");
 
-            float[] prod6 = CuDotProdCached(Repetition, "spmv_csr_scalar_kernel");
+            float[] prod6 = CuDotProdCRSCached(Repetition, "spmv_csr_scalar_kernel");
             // TestEquality(good, prod5);
 
 
@@ -191,10 +202,8 @@ namespace TestDotProduct
             Console.WriteLine("-----------------------------------");
         }
 
-        private unsafe static float[] CuDotProd()
+        private unsafe static float[] CuDotProdSparseVecStruct()
         {
-
-
 
             int sparseVecSize = sizeof(SparseVecPtr);
 
@@ -873,7 +882,7 @@ namespace TestDotProduct
         }
 
 
-        private static float[] CuDotProdCached(int repetition,string moduleFunction)
+        private static float[] CuDotProdCRSCached(int repetition,string moduleFunction)
         {
 
             //always the same values
@@ -1475,10 +1484,7 @@ namespace TestDotProduct
             GCHandle handle = GCHandle.Alloc(vectors, GCHandleType.Pinned);
             IntPtr ptr = handle.AddrOfPinnedObject();
 
-
-
-
-
+            
             float[] output = new float[N];
 
             //CUdeviceptr dVectors = cuda.CopyHostToDevice(vectors);

@@ -2,8 +2,7 @@
 
 #define BLOCKSIZE 16
 
-dim3 dimBlock(BLOCKSIZE,BLOCKSIZE);
-dim3 dimGrid(BCols/dimBlock.x, ARows/dimBlock.y);
+
 
 //computes two sparse matrix product in CRS format
 //AVals - values for first matrix
@@ -15,7 +14,7 @@ dim3 dimGrid(BCols/dimBlock.x, ARows/dimBlock.y);
 //result - result matrix
 //ARows - number of rows in first matrix
 //BCols - number of cols in second matrix
-extern "C" __global__ void spmm_csr_scalar(const float * AVals,
+extern "C" __global__ void spmm_csr_naive(const float * AVals,
 									   const int * AIdx, 
 									   const int * APtrs,
 									   const float * BVals,
