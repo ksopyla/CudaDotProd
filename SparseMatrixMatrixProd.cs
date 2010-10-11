@@ -18,7 +18,7 @@ namespace TestDotProduct
         public const int Rows = 4;
         public const int Cols = 4;
 
-        public const int displayCount=5;
+        public const int displayCount=16;
         public const int maxVal = 1;
 
         public static int avgElements= 3;
@@ -84,7 +84,9 @@ namespace TestDotProduct
 
             int blockSizeX = 4;
             int blockSizeY = 4;
-            
+            int Aelements = AVals.Length;
+            int Belements = BVals.Length;
+
             cuda.SetFunctionBlockShape(cuFunc,blockSizeX,blockSizeY, 1);
 
             int offset = 0;
@@ -108,6 +110,13 @@ namespace TestDotProduct
             offset += sizeof(int);
             cuda.SetParameter(cuFunc, offset, (uint)Cols);
             offset += sizeof(int);
+
+            cuda.SetParameter(cuFunc, offset, (uint)Aelements);
+            offset += sizeof(int);
+            cuda.SetParameter(cuFunc, offset, (uint)Belements);
+            offset += sizeof(int);
+            
+            
             cuda.SetParameterSize(cuFunc, (uint)offset);
             #endregion
             Console.WriteLine("start computation");
@@ -142,7 +151,7 @@ namespace TestDotProduct
             Console.Write("Matrix products with kernel {0}, takes {1} ms stopwatch time {2} ms", moduleFunction, cudaTime, timer.Elapsed);
 
 
-            int lenght = Math.Min(displayCount, Rows);
+            int lenght = displayCount;// Math.Min(displayCount, Rows);
             Console.WriteLine();
             for (int i = 0; i < lenght; i++)
             {

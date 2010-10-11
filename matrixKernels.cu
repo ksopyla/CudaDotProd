@@ -22,7 +22,9 @@ extern "C" __global__ void spmm_csr_naive(const float * AVals,
 									   const int * BPtrs,
 									   float * result,
 									   const int ARows,
-									   const int BCols)
+									   const int BCols,
+									   const int AElements,
+									   const int BElements)
 {
 
 	const int row = blockIdx.y*blockDim.y+threadIdx.y;
@@ -36,34 +38,47 @@ extern "C" __global__ void spmm_csr_naive(const float * AVals,
 	//possible optimization, cache this in shared memory
 	int AStart = APtrs[row];
 	int AEnd = APtrs[row+1];
+	int curPosA = AStart;
 
 	int BStart = BPtrs[col];
 	int BEnd = BPtrs[col+1];
+	int curPosB = BStart;
 
 	int AcurIdx = AIdx[AStart];
 	int BcurIdx = BIdx[BStart];
-
-	float sum=0;
 	
 
-	while(AcurIdx<AEnd && BcurIdx<BEnd)
+	float sum=0;
+
+	while(curPosA<AEnd && curPosB<BEnd)
 	{
-		if(AIdx[AcurIdx] == BIdx[BcurIdx])
+		AcurIdx = AIdx[curPosA];
+		BcurIdx = BIdx[curPosB];
+
+		if(AcurIdx == BcurIdx)
 		{
-			sum+=AVals[AcurIdx]*BVals[BcurIdx];
-			AcurIdx++;
-			BcurIdx++;
-		}else if( AIdx[AcurIdx]< BIdx[BcurIdx])
+			sum+=AVals[curPosA]*BVals[curPosB];
+			curPosA++;
+			curPosB++;
+		}else if( AcurIdx< BcurIdx)
 		{
-			AcurIdx++;
+			curPosA++;
 		}else
 		{
-			BcurIdx++;
+			curPosB++;
 		}
+
+		/*
+		if(curPosA<AElements)
+			AcurIdx = AIdx[curPosA];
+		
+		if(curPosB<BElements)
+			BcurIdx = BIdx[curPosB];
+			*/
 
 	}
 
-	result[row*ARows+col] = sum;
+	result[row*BCols+col] = sum;
 
 
 }
