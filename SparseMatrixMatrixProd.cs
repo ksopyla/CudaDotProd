@@ -15,14 +15,14 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 4;
-        public const int Cols = 4;
+        public const int Rows = 128;
+        public const int Cols = 64;
 
         public const int displayCount=16;
         public const int maxVal = 1;
 
-        public static int avgElements= 3;
-        public static int stdElements = 2;
+        public static int avgElements= 24;
+        public static int stdElements = 10;
 
         /// <summary>
         /// implementation of sparese matrix product
@@ -55,9 +55,9 @@ namespace TestDotProduct
             int maxIndex = 0;
             MakeRandCrsSparseMatrix(Rows, maxRowSize, out AVals, out AIdx, out ARowLen,out maxIndex);
 
-            DisplayCrsMatrix(AVals, AIdx, ARowLen,maxIndex);
+           // DisplayCrsMatrix(AVals, AIdx, ARowLen,maxIndex);
             MakeRandCrsSparseMatrix(Cols, maxRowSize, out BVals, out BIdx, out BRowLen,out maxIndex);
-            DisplayCrsMatrix(AVals, AIdx, ARowLen, maxIndex);
+            //DisplayCrsMatrix(BVals, BIdx, BRowLen, maxIndex);
 
 
             Console.WriteLine("Init takes {0}", t.Elapsed);
@@ -127,8 +127,8 @@ namespace TestDotProduct
             //CUtexref cuTexRef = cuda.GetModuleTexture(module, "texRef");
             //cuda.SetTextureFlags(cuTexRef, 0);
 
-            int gridDimX= Cols/blockSizeX;
-            int gridDimY= Rows/blockSizeY;
+            int gridDimX =(int) Math.Ceiling((Cols + 0.0) / blockSizeX);
+            int gridDimY = (int)Math.Ceiling((0.0+Rows)/blockSizeY);
             Stopwatch timer = Stopwatch.StartNew();
             cuda.RecordEvent(start);
 
@@ -172,6 +172,94 @@ namespace TestDotProduct
             cuda.DestroyEvent(end);
 
             return output;
+        }
+
+
+
+        public static float[] NormalCRSSparseMM(int repetition)
+        {
+
+            int maxRowSize = avgElements + stdElements - 1;
+
+            Console.WriteLine("init Matrix");
+            Stopwatch t = Stopwatch.StartNew();
+
+            //values in CRS format
+            float[] AVals, BVals;
+            //indexes in Crs format
+            int[] AIdx, BIdx;
+            //Lenght of each row in CRS format
+            int[] ARowLen, BRowLen;
+            int maxIndex = 0;
+            MakeRandCrsSparseMatrix(Rows, maxRowSize, out AVals, out AIdx, out ARowLen, out maxIndex);
+
+            // DisplayCrsMatrix(AVals, AIdx, ARowLen,maxIndex);
+            MakeRandCrsSparseMatrix(Cols, maxRowSize, out BVals, out BIdx, out BRowLen, out maxIndex);
+            //DisplayCrsMatrix(BVals, BIdx, BRowLen, maxIndex);
+
+            float[] result = null;
+            for (int i = 0; i < repetition; i++)
+            {
+               result= Mul2SparseMatrix(AVals, AIdx, ARowLen, BVals, BIdx, BRowLen, Rows, Cols);
+            }
+
+            return result;
+
+        }
+
+        private static float[] Mul2SparseMatrix(float[] AVals, int[] AIdx, int[] ARowLen, float[] BVals, int[] BIdx, int[] BRowLen, int Rows, int Cols)
+        {
+            float[] result = new float[Rows*Cols];
+
+            for (int i = 0; i < Rows; i++)
+            {
+                for (int j = 0; j < Cols; j++)
+                {
+
+                    int AStart = ARowLen[i];
+                    int AEnd = ARowLen[i + 1];
+                    int curPosA = AStart;
+
+                    int BStart = BRowLen[j];
+                    int BEnd = BRowLen[j + 1];
+                    int curPosB = BStart;
+
+                    int AcurIdx = AIdx[AStart];
+                    int BcurIdx = BIdx[BStart];
+
+
+                    float sum = 0;
+
+                    while (curPosA < AEnd && curPosB < BEnd)
+                    {
+                        AcurIdx = AIdx[curPosA];
+                        BcurIdx = BIdx[curPosB];
+
+                        if (AcurIdx == BcurIdx)
+                        {
+                            sum += AVals[curPosA] * BVals[curPosB];
+                            curPosA++;
+                            curPosB++;
+                        }
+                        else if (AcurIdx < BcurIdx)
+                        {
+                            curPosA++;
+                        }
+                        else
+                        {
+                            curPosB++;
+                        }
+
+                    }
+
+                    result[i*Cols+ j] = sum;
+
+
+                }
+            }
+
+            return result;
+
         }
 
         private static void DisplayCrsMatrix(float[] AVals, int[] AIdx, int[] ARowLen, int maxCols)

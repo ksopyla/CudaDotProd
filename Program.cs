@@ -60,10 +60,7 @@ namespace TestDotProduct
         static int threadsPerBlock = 256;
         static int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
 
-        /// <summary>
-        /// error for chcecking results
-        /// </summary>
-        static float ErrorEpsilon = 0.001f;
+        
         static float Gamma = 1f / 16;
 
         static int StartingIndex = 2;
@@ -90,7 +87,11 @@ namespace TestDotProduct
 
         private static void CudaSparseMatrixExperiments()
         {
-            SparseMatrixMatrixProd.CRSSparseMM(1, "spmm_csr_naive");
+            float[] crsResult=SparseMatrixMatrixProd.CRSSparseMM(1, "spmm_csr_naive");
+
+            float[] normalResult = SparseMatrixMatrixProd.NormalCRSSparseMM(1);
+
+            Helpers.TestEquality(normalResult, crsResult);
         }
 
         private static void CudaRBFProductExperiments()
@@ -99,11 +100,11 @@ namespace TestDotProduct
             Console.WriteLine("---------------------------------------");
 
             float[] rbf1 = CuRBFEllPackTexCached();
-            TestEquality(good, rbf1);
+            Helpers.TestEquality(good, rbf1);
             Console.WriteLine("---------------------------------------");
 
             float[] rbf2 = CuRBFCSRCached();
-            TestEquality(good, rbf2);
+            Helpers.TestEquality(good, rbf2);
             Console.WriteLine("---------------------------------------");
         }
 
@@ -1904,26 +1905,6 @@ namespace TestDotProduct
             return output;
         }
 
-        public static void TestEquality(float[] arr1, float[] arr2)
-        {
-            if (arr1.Length != arr2.Length)
-                Console.WriteLine("Not the same, different sizes");
-
-            bool passed = true;
-            for (int i = 0; i < arr2.Length; i++)
-            {
-                float diff = Math.Abs(arr1[i] - arr2[i]);
-                if (diff > ErrorEpsilon)
-                {
-                    Console.WriteLine("     !! Not the same diff={0}, position {1}", diff, i);
-                    passed = false;
-                    //break;
-                }
-            }
-
-            string msg = passed ? "PASSED" : "FAIL";
-            Console.WriteLine(msg);
-
-        }
+        
     }
 }
