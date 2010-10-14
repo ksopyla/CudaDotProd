@@ -87,11 +87,14 @@ namespace TestDotProduct
 
         private static void CudaSparseMatrixExperiments()
         {
-            float[] crsResult=SparseMatrixMatrixProd.CRSSparseMM(1, "spmm_csr_naive");
+            float[] crsResult=SparseMatrixMatrixProd.CRSSparseMM(1, "spmm_csr_naive",16,16);
+
+            float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1, "spmm_csr_naive_shared_one", 1, 16);
 
             float[] normalResult = SparseMatrixMatrixProd.NormalCRSSparseMM(1);
 
-            Helpers.TestEquality(normalResult, crsResult);
+           // Helpers.TestEquality(normalResult, crsResult);
+            Helpers.TestEquality(normalResult, crsResultSharedOne);
         }
 
         private static void CudaRBFProductExperiments()

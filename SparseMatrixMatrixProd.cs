@@ -15,14 +15,14 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 128;
-        public const int Cols = 64;
+        public const int Rows = 8*512;
+        public const int Cols = 8*256;
 
         public const int displayCount=16;
         public const int maxVal = 1;
 
-        public static int avgElements= 24;
-        public static int stdElements = 10;
+        public static int avgElements= 64;
+        public static int stdElements = 16;
 
         /// <summary>
         /// implementation of sparese matrix product
@@ -30,9 +30,10 @@ namespace TestDotProduct
         /// <param name="repetition"></param>
         /// <param name="moduleFunction"></param>
         /// <returns></returns>
-        public static float[] CRSSparseMM(int repetition, string moduleFunction)
+        public static float[] CRSSparseMM(int repetition, string moduleFunction, int blockSizeX,int blockSizeY)
         {
-
+            //int blockSizeX = 4;
+            //int blockSizeY = 4;
 
             CUDA cuda = new CUDA(0, true);
 
@@ -82,8 +83,7 @@ namespace TestDotProduct
             Console.WriteLine("copy to device takes {0}", t.Elapsed);
             #region set cuda parameters
 
-            int blockSizeX = 4;
-            int blockSizeY = 4;
+            
             int Aelements = AVals.Length;
             int Belements = BVals.Length;
 
@@ -196,12 +196,16 @@ namespace TestDotProduct
             // DisplayCrsMatrix(AVals, AIdx, ARowLen,maxIndex);
             MakeRandCrsSparseMatrix(Cols, maxRowSize, out BVals, out BIdx, out BRowLen, out maxIndex);
             //DisplayCrsMatrix(BVals, BIdx, BRowLen, maxIndex);
+            Console.WriteLine("Init takes {0}", t.Elapsed);
 
             float[] result = null;
+            t.Reset();
+            t.Start();
             for (int i = 0; i < repetition; i++)
             {
                result= Mul2SparseMatrix(AVals, AIdx, ARowLen, BVals, BIdx, BRowLen, Rows, Cols);
             }
+            Console.WriteLine("computation on CPU takes {0}", t.Elapsed);
 
             return result;
 
