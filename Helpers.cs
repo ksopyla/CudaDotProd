@@ -47,25 +47,31 @@ namespace TestDotProduct
             return vals;
         }
 
-        public static void TestEquality(float[] arr1, float[] arr2)
+        public static void TestEquality(float[] arr1, float[] arr2,string info)
         {
             if (arr1.Length != arr2.Length)
                 Console.WriteLine("Not the same, different sizes");
 
             bool passed = true;
+            int errorCounter = 0;
             for (int i = 0; i < arr2.Length; i++)
             {
                 float diff = Math.Abs(arr1[i] - arr2[i]);
                 if (diff > ErrorEpsilon)
                 {
-                    Console.WriteLine("     !! Not the same diff={0}, position {1}", diff, i);
-                    passed = false;
+                    errorCounter++;
+                    if (errorCounter < 10)
+                    {
+                        Console.WriteLine("  !!eror good={0} - bad={1} diff={2}, position {3}",arr1[i],arr2[i], diff, i);
+                        passed = false;
+                    }
                     //break;
                 }
             }
 
+
             string msg = passed ? "PASSED" : "FAIL";
-            Console.WriteLine(msg);
+            Console.WriteLine("{0} {1} errors={2}",info,msg,errorCounter);
 
         }
 

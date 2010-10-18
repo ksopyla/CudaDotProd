@@ -103,46 +103,50 @@ extern "C" __global__ void spmm_csr_naive_shared_one(const float * AVals,
 									   const int BElements)
 {
 	//max size = 4081
-	__shared__ float svIdx[1000];
-	__shared__ float svVals[1000];
+	__shared__ int svIdx[121];
+	__shared__ float svVals[121];
 
+	//barier[0]=BStart
+	//barier[1]=BEnd
+	__shared__ int barier[2];
 	
 	const int row = blockIdx.y*blockDim.y+threadIdx.y;
 	const int col = blockIdx.x*blockDim.x+threadIdx.x;
 	
+	if( !(row<ARows && col<BCols) )
+	{
+		return;
+	}
+
 	//int BStart = BPtrs[col];
-	int BEnd = BPtrs[col+1];
-	int curPosB = BPtrs[col];
+	if(threadIdx.y<2){
+		barier[threadIdx.y]=BPtrs[col+threadIdx.y]	;
+	}
+	//????
+	__syncthreads();
+	int curPosB = barier[0];
+	int diff=barier[1]-barier[0];
 	
-	int diff=BEnd-curPosB;
-	
+	//int curPosB = BPtrs[col];
+	//int diff = BPtrs[col+1] - curPosB;
+
 	int BcurIdx;
 
-	for(int th=threadIdx.y; th<(BEnd-curPosB);th+=blockDim.y)
+	for(int th=threadIdx.y; th<diff;th+=blockDim.y)
 	{
 		svVals[th]= BVals[curPosB+th];
 		svIdx[th]=BIdx[curPosB+th];
 	}
 	__syncthreads();
 
-	if( !(row<ARows && col<BCols) )
-	{
-		return;
-	}
-
-	//possible optimization, cache this in shared memory
-	//int AStart = APtrs[row];
-	int AEnd = APtrs[row+1];
 	int curPosA = APtrs[row];
+	int AEnd = APtrs[row+1];
 	int AcurIdx;
-
 	float sum=0;
-
 	//now B column is in shared mem, so it starts from 0
 	curPosB=0;
-	BEnd=diff;
-
-	while(curPosA<AEnd && curPosB<BEnd)
+	
+	while(curPosA<AEnd && curPosB<diff)
 	{
 		AcurIdx = AIdx[curPosA];
 		BcurIdx = svIdx[curPosB];
@@ -159,10 +163,9 @@ extern "C" __global__ void spmm_csr_naive_shared_one(const float * AVals,
 		{
 			curPosB++;
 		}
-
 	}
-
+	__syncthreads();
 	result[row*BCols+col] = sum;
-
-
+	//column major order
+	//result[row+ARows*col] = sum;
 }

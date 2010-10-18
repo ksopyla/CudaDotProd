@@ -87,14 +87,15 @@ namespace TestDotProduct
 
         private static void CudaSparseMatrixExperiments()
         {
-            float[] crsResult=SparseMatrixMatrixProd.CRSSparseMM(1, "spmm_csr_naive",16,16);
-
-            float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1, "spmm_csr_naive_shared_one", 1, 16);
-
             float[] normalResult = SparseMatrixMatrixProd.NormalCRSSparseMM(1);
 
-           // Helpers.TestEquality(normalResult, crsResult);
-            Helpers.TestEquality(normalResult, crsResultSharedOne);
+            float[] crsResult = SparseMatrixMatrixProd.CRSSparseMM(1, 
+                "spmm_csr_naive", 16, 16);
+            Helpers.TestEquality(normalResult, crsResult, "Naive CRS");
+            
+            float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1, 
+                "spmm_csr_naive_shared_one", 1, 512);
+            Helpers.TestEquality(normalResult, crsResultSharedOne,"Naive CRS shared");
         }
 
         private static void CudaRBFProductExperiments()
@@ -103,11 +104,11 @@ namespace TestDotProduct
             Console.WriteLine("---------------------------------------");
 
             float[] rbf1 = CuRBFEllPackTexCached();
-            Helpers.TestEquality(good, rbf1);
+            Helpers.TestEquality(good, rbf1,"cuRBFEllPackTex");
             Console.WriteLine("---------------------------------------");
 
             float[] rbf2 = CuRBFCSRCached();
-            Helpers.TestEquality(good, rbf2);
+            Helpers.TestEquality(good, rbf2,"cuRBFCRSCached");
             Console.WriteLine("---------------------------------------");
         }
 

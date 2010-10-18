@@ -15,14 +15,14 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 8*512;
-        public const int Cols = 8*256;
+        public const int Rows = 12*1024;
+        public const int Cols = 1024;
 
-        public const int displayCount=16;
+        public const int displayCount=0;
         public const int maxVal = 1;
 
-        public static int avgElements= 64;
-        public static int stdElements = 16;
+        public static int avgElements= 80;
+        public static int stdElements = 20;
 
         /// <summary>
         /// implementation of sparese matrix product
@@ -44,6 +44,7 @@ namespace TestDotProduct
 
             int maxRowSize = avgElements + stdElements - 1;
 
+            Console.WriteLine("------------------------------------");
             Console.WriteLine("init Matrix");
             Stopwatch t = Stopwatch.StartNew();
 
@@ -132,12 +133,13 @@ namespace TestDotProduct
             Stopwatch timer = Stopwatch.StartNew();
             cuda.RecordEvent(start);
 
+            
             for (int k = 0; k < repetition; k++)
             {
                 cuda.Launch(cuFunc, gridDimX, gridDimY);
 
                 cuda.SynchronizeContext();
-                // cuda.CopyDeviceToHost(dOutput, output);
+               //  cuda.CopyDeviceToHost(dOutput, output);
                 Marshal.Copy(outputPtr2, output, 0, outputSize);
             }
 
@@ -148,7 +150,8 @@ namespace TestDotProduct
             timer.Stop();
             float cudaTime = cuda.ElapsedTime(start, end);
 
-            Console.Write("Matrix products with kernel {0}, takes {1} ms stopwatch time {2} ms", moduleFunction, cudaTime, timer.Elapsed);
+            Console.WriteLine("Matrix products with kernel {0}",moduleFunction);
+            Console.WriteLine("  takes {0} ms stopwatch time {1} ms", cudaTime, timer.Elapsed);
 
 
             int lenght = displayCount;// Math.Min(displayCount, Rows);
