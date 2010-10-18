@@ -15,8 +15,8 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 64;
-        public const int Cols = 64;
+        public const int Rows = 22*1024;
+        public const int Cols = 1024;
 
         public const int displayCount=0;
         public const int maxVal = 1;
@@ -30,7 +30,8 @@ namespace TestDotProduct
         /// <param name="repetition"></param>
         /// <param name="moduleFunction"></param>
         /// <returns></returns>
-        public static float[] CRSSparseMM(int repetition, string moduleFunction, int blockSizeX,int blockSizeY)
+        public static float[] CRSSparseMM(int repetition, string moduleFunction, 
+            int blockSizeX,int blockSizeY)
         {
             //int blockSizeX = 4;
             //int blockSizeY = 4;

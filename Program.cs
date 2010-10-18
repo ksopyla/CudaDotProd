@@ -98,7 +98,7 @@ namespace TestDotProduct
            // Helpers.TestEquality(normalResult, crsResultSharedOne, "Naive CRS shared");
 
             float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
-                "spmm_csr_warp", 256, 1);
+                "spmm_csr_warp",1, 128);
              Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
         }
 
@@ -912,7 +912,7 @@ namespace TestDotProduct
             //temp lists for values, indices and vecotr lenght
             List<float> vecValsL = new List<float>(N * maxRowSize / 2);
             List<int> vecIdxL = new List<int>(N * maxRowSize / 2);
-            List<int> vecLenghtL = new List<int>(N);
+            List<int> vecLenghtL = new List<int>(N+1);
 
             float[] vecVals;
             int[] vecIdx;

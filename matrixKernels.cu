@@ -13,7 +13,7 @@ __device__ float FindValForBIdx(const int* BIdx,
 								int col_start, int col_end)
 {
 	int low = col_start;
-    int high = col_end;
+    int high = col_end-1;
 	int mid=-1;
     while (low < high) {
 		mid = low + ((high - low) / 2);
@@ -23,12 +23,29 @@ __device__ float FindValForBIdx(const int* BIdx,
 			//can't be high = mid-1: here A[mid] >= value,
             //so high can't be < mid if A[mid] == value
             high = mid;
-       }
-       // high == low, using high or low depends on taste
-       if ((low < col_end) && (BIdx[low] == index))
-           return BVals[low]; // found
-       else
-           return 0.0; // not found
+    }
+
+    // high == low, using high or low depends on taste
+    if ((low < col_end) && (BIdx[low] == index))
+        return BVals[low]; // found
+    else
+		return 0.0; // not found
+
+
+
+//	int low = col_start;
+//  int high=col_end-1;
+//int mid=-1;
+//int curIdx=-1;
+//  do
+//    mid = low + ((high-low)/ 2);//better bit shift
+//	curIdx =BIdx[mid];
+//	if( index > curIdx){
+//      low= mid + 1;
+//	}
+//    else 
+//      high= mid - 1;
+//  while (curIdx = index) || (low > high);
 
 }
 
@@ -232,18 +249,18 @@ extern "C" __global__ void spmm_csr_warp(const float * AVals,
 	//stores "start" and "end" of column
 	__shared__ int bShPtrs[2];
 	// global thread index
-    const int thread_id   = BLOCK_SIZE * blockIdx.x + threadIdx.x;  
+    const int thread_id   = BLOCK_SIZE * blockIdx.y + threadIdx.y;  
 	// thread index within the warp (0,31)
-    const int thread_lane = threadIdx.x & (WARP_SIZE-1);            
+    const int thread_lane = threadIdx.y & (WARP_SIZE-1);            
 	// global warp index
     const int warp_id     = thread_id   / WARP_SIZE;                
 	// warp index within the CTA
-    const int warp_lane   = threadIdx.x / WARP_SIZE;                
+    const int warp_lane   = threadIdx.y / WARP_SIZE;                
 	// total number of active warps
-    const int num_warps   = (BLOCK_SIZE / WARP_SIZE) * gridDim.x;  
+    const int num_warps   = (BLOCK_SIZE / WARP_SIZE) * gridDim.y;  
 
 	//index of column in B matrix
-	const int col = blockDim.y*blockIdx.y+threadIdx.y;
+	const int col = blockDim.x*blockIdx.x+threadIdx.x;
 
 	/*if(threadIdx.y<2){
 			bShPtrs[threadIdx.y]=BPtrs[col+threadIdx.y]	;
@@ -273,17 +290,24 @@ extern "C" __global__ void spmm_csr_warp(const float * AVals,
             sum += AVals[jj] * bVal;
 		}
         // reduce local sums to row sum (ASSUME: warpsize 32)
-        sdata[threadIdx.x] = sum;
-        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x + 16]; __syncthreads(); 
-        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  8]; __syncthreads();
-        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  4]; __syncthreads();
-        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  2]; __syncthreads();
-        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  1]; __syncthreads();
+        sdata[threadIdx.y] = sum;
+        sdata[threadIdx.y] = sum = sum + sdata[threadIdx.y + 16]; 
+		__syncthreads(); 
+        sdata[threadIdx.y] = sum = sum + sdata[threadIdx.y +  8]; 
+		__syncthreads();
+        sdata[threadIdx.y] = sum = sum + sdata[threadIdx.y +  4]; 
+		__syncthreads();
+        sdata[threadIdx.y] = sum = sum + sdata[threadIdx.y +  2]; 
+		__syncthreads();
+        sdata[threadIdx.y] = sum = sum + sdata[threadIdx.y +  1];
+		__syncthreads();
 
         // first thread writes warp result
-        if (thread_lane == 0)
+		if (thread_lane == 0){
             //results[row] += sdata[threadIdx.x];
-			result[row] =sdata[threadIdx.x];
+			//result[row] =sdata[threadIdx.x];
+			result[row*BCols+col] = sdata[threadIdx.y];
+		}
 	}
 			
 }
