@@ -201,7 +201,7 @@ extern "C" __global__ void spmm_csr_naive_shared_one(const float * AVals,
 }
 
 
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 128
 #define WARP_SIZE 32
 //computes two sparse matrix product in CRS format, try to align memory access
 //in warps
@@ -245,6 +245,15 @@ extern "C" __global__ void spmm_csr_warp(const float * AVals,
 	//index of column in B matrix
 	const int col = blockDim.y*blockIdx.y+threadIdx.y;
 
+	/*if(threadIdx.y<2){
+			bShPtrs[threadIdx.y]=BPtrs[col+threadIdx.y]	;
+	}
+	const int col_start = bShPtrs[0];
+	const int col_end =	bShPtrs[1];*/
+
+	const int col_start = BPtrs[col];
+	const int col_end =	BPtrs[col+1];
+
     for(int row = warp_id; row < ARows; row += num_warps){
         // use two threads to fetch vecPointers[row] and vecPointers[row+1]
         // this is considerably faster than the straightforward version
@@ -253,22 +262,14 @@ extern "C" __global__ void spmm_csr_warp(const float * AVals,
         const int row_start = ptrs[warp_lane][0];   //same as: row_start = vecPointers[row];
         const int row_end   = ptrs[warp_lane][1];   //same as: row_end   = vecPointers[row+1];
 
-
-		if(threadIdx.y<2){
-			bShPtrs[threadIdx.y]=BPtrs[col+threadIdx.y]	;
-		}
-		const int col_start = bShPtrs[0];
-		const int col_end =	bShPtrs[1];
         // compute local sum
         float sum = 0;
-		int lastMinIdx=-1;
+		
 		float bVal=0;
 
         for(int jj = row_start + thread_lane; jj < row_end; jj += WARP_SIZE)
 		{
-
 			bVal=FindValForBIdx(BIdx,BVals,AIdx[jj],col_start,col_end);
-
             sum += AVals[jj] * bVal;
 		}
         // reduce local sums to row sum (ASSUME: warpsize 32)

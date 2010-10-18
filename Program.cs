@@ -94,7 +94,7 @@ namespace TestDotProduct
             //Helpers.TestEquality(normalResult, crsResult, "Naive CRS");
 
             //float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1,
-                "spmm_csr_naive_shared_one", 1, 512);
+            //    "spmm_csr_naive_shared_one", 1, 512);
            // Helpers.TestEquality(normalResult, crsResultSharedOne, "Naive CRS shared");
 
             float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
