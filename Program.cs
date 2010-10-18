@@ -89,13 +89,17 @@ namespace TestDotProduct
         {
             float[] normalResult = SparseMatrixMatrixProd.NormalCRSSparseMM(1);
 
-            float[] crsResult = SparseMatrixMatrixProd.CRSSparseMM(1, 
-                "spmm_csr_naive", 16, 16);
-            Helpers.TestEquality(normalResult, crsResult, "Naive CRS");
-            
-            float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1, 
+            //float[] crsResult = SparseMatrixMatrixProd.CRSSparseMM(1,
+            //    "spmm_csr_naive", 16, 16);
+            //Helpers.TestEquality(normalResult, crsResult, "Naive CRS");
+
+            //float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1,
                 "spmm_csr_naive_shared_one", 1, 512);
-            Helpers.TestEquality(normalResult, crsResultSharedOne,"Naive CRS shared");
+           // Helpers.TestEquality(normalResult, crsResultSharedOne, "Naive CRS shared");
+
+            float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
+                "spmm_csr_warp", 256, 1);
+             Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
         }
 
         private static void CudaRBFProductExperiments()

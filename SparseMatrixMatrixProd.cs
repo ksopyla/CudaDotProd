@@ -15,8 +15,8 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 12*1024;
-        public const int Cols = 1024;
+        public const int Rows = 64;
+        public const int Cols = 64;
 
         public const int displayCount=0;
         public const int maxVal = 1;
