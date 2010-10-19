@@ -218,7 +218,7 @@ extern "C" __global__ void spmm_csr_naive_shared_one(const float * AVals,
 }
 
 
-#define BLOCK_SIZE 128
+#define BLOCK_SIZE 32*4
 #define WARP_SIZE 32
 //computes two sparse matrix product in CRS format, try to align memory access
 //in warps
