@@ -218,7 +218,7 @@ extern "C" __global__ void spmm_csr_naive_shared_one(const float * AVals,
 }
 
 
-#define BLOCK_SIZE 32*4
+#define BLOCK_SIZE 64
 #define WARP_SIZE 32
 //computes two sparse matrix product in CRS format, try to align memory access
 //in warps
@@ -437,7 +437,7 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
 {
 
 
-//!!!!!! not ready meny errors !!!!!
+//!!!!!! not ready many errors !!!!!
 // do not use it !
 
 	__shared__ float sdata[2][BLOCK_SIZE + 16];                          // padded to avoid reduction ifs
@@ -459,10 +459,11 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
 	// total number of active warps
     const int num_warps   = (BLOCK_SIZE / WARP_SIZE) * gridDim.y;  
 
-	//index of column in B matrix
-	const int col = blockDim.x*blockIdx.x+threadIdx.x;
+	//index of first column in block in B matrix
+	//assume that blockDim.x==2
+	const int col = blockDim.x*blockIdx.x; //+threadIdx.x;
 
-
+	//copy pointers to each column to shared memory
 	if(threadIdx.y<2)
 	{
 		//blockDim.x must equal 2
@@ -470,6 +471,7 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
 	}
 	__syncthreads();
 
+	//copy vals and indexes for two column to shared mem.
 	for(int th=threadIdx.y; th<(bShPtrs[threadIdx.x][1]-bShPtrs[threadIdx.x][0]);th+=blockDim.y)
 	{
 		svVals[threadIdx.x][th]= BVals[bShPtrs[threadIdx.x][0]+th];
@@ -485,7 +487,7 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
         const int row_start = ptrs[warp_lane][0];   //same as: row_start = vecPointers[row];
         const int row_end   = ptrs[warp_lane][1];   //same as: row_end   = vecPointers[row+1];
 
-        // compute local sum
+        // compute local sum for two row and two column
 		float sum[2] = {0,0};
 		
 		float bVal1=0;
@@ -514,11 +516,11 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
 		__syncthreads();
 
         // first thread writes warp result
-		if (thread_lane == 0){
+		if (thread_lane <2){
             //results[row] += sdata[threadIdx.x];
 			//result[row] =sdata[threadIdx.x];
 			//dupa tutaj 
-			result[row*BCols+col] = sdata[threadIdx.x][threadIdx.y];
+			result[row*BCols+col+thread_lane] = sdata[threadIdx.x][threadIdx.y];
 		}
 	}
 			

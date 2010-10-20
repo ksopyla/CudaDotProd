@@ -15,7 +15,7 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 22*1024;
+        public const int Rows = 1024;
         public const int Cols = 1024;
 
         public const int displayCount=0;
@@ -129,7 +129,7 @@ namespace TestDotProduct
             //CUtexref cuTexRef = cuda.GetModuleTexture(module, "texRef");
             //cuda.SetTextureFlags(cuTexRef, 0);
 
-            int gridDimX =(int) Math.Ceiling((Cols + 0.0) / blockSizeX);
+            int gridDimX =(int) Math.Ceiling((Cols + 0.0) / (blockSizeX*2));
             int gridDimY = (int)Math.Ceiling((0.0+Rows)/blockSizeY);
             Stopwatch timer = Stopwatch.StartNew();
             cuda.RecordEvent(start);

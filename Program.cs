@@ -87,7 +87,7 @@ namespace TestDotProduct
 
         private static void CudaSparseMatrixExperiments()
         {
-           // float[] normalResult = SparseMatrixMatrixProd.NormalCRSSparseMM(1);
+            float[] normalResult = SparseMatrixMatrixProd.NormalCRSSparseMM(1);
 
             //float[] crsResult = SparseMatrixMatrixProd.CRSSparseMM(1,
             //    "spmm_csr_naive", 16, 16);
@@ -97,14 +97,18 @@ namespace TestDotProduct
             //    "spmm_csr_naive_shared_one", 1, 64);
            // Helpers.TestEquality(normalResult, crsResultSharedOne, "Naive CRS shared");
 
-            int blockY = 4*32;
-            float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
-                "spmm_csr_warp",1, blockY);
-            // Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
+            int blockY = 64;
+            //float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
+            //    "spmm_csr_warp",1, blockY);
+            //// Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
 
-            float[] crsResultWarpShared = SparseMatrixMatrixProd.CRSSparseMM(1,
-                "spmm_csr_warp_shared", 1, blockY);
+            //float[] crsResultWarpShared = SparseMatrixMatrixProd.CRSSparseMM(1,
+            //    "spmm_csr_warp_shared", 1, blockY);
              //Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp shared");
+
+            float[] crsResultWarpSharedDouble = SparseMatrixMatrixProd.CRSSparseMM(1,
+                "spmm_csr_warp_shared_doubled", 2, blockY);
+            Helpers.TestEquality(normalResult, crsResultWarpSharedDouble, "CRS warp shared doubled");
 
             
         }
