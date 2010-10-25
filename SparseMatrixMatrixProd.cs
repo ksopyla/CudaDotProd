@@ -15,7 +15,7 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 1024;
+        public const int Rows = 4*1024;
         public const int Cols = 1024;
 
         public const int displayCount=0;
@@ -27,11 +27,16 @@ namespace TestDotProduct
         /// <summary>
         /// implementation of sparese matrix product
         /// </summary>
-        /// <param name="repetition"></param>
-        /// <param name="moduleFunction"></param>
+        /// <param name="repetition">how many times kernel should be launch</param>
+        /// <param name="moduleFunction">cuda kenrel name</param>
+        /// <param name="blockSizeX">block size X</param>
+        /// <param name="blockSizeY">block size Y</param>
+        /// <param name="transposeGrid">indicate that grid dimensions should be 
+        /// computed alternativly, if false than gridDimY- connected with rows
+        /// else gridDim.Y conected with cols</param>
         /// <returns></returns>
         public static float[] CRSSparseMM(int repetition, string moduleFunction, 
-            int blockSizeX,int blockSizeY)
+            int blockSizeX,int blockSizeY, bool transposeGrid)
         {
             //int blockSizeX = 4;
             //int blockSizeY = 4;
@@ -129,8 +134,14 @@ namespace TestDotProduct
             //CUtexref cuTexRef = cuda.GetModuleTexture(module, "texRef");
             //cuda.SetTextureFlags(cuTexRef, 0);
 
-            int gridDimX =(int) Math.Ceiling((Cols + 0.0) / (blockSizeX*2));
+            int gridDimX =(int) Math.Ceiling((Cols + 0.0) / (blockSizeX));
             int gridDimY = (int)Math.Ceiling((0.0+Rows)/blockSizeY);
+            if (transposeGrid)
+            {
+                gridDimX = (int)Math.Ceiling((Rows + 0.0) / (blockSizeX));
+                gridDimY = (int)Math.Ceiling((0.0 + Cols) / blockSizeY);
+            }
+
             Stopwatch timer = Stopwatch.StartNew();
             cuda.RecordEvent(start);
 

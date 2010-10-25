@@ -87,27 +87,33 @@ namespace TestDotProduct
 
         private static void CudaSparseMatrixExperiments()
         {
+            int blockY = 64;
+            
             float[] normalResult = SparseMatrixMatrixProd.NormalCRSSparseMM(1);
 
             //float[] crsResult = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_naive", 16, 16);
+            //    "spmm_csr_naive", 16, 16,false);
             //Helpers.TestEquality(normalResult, crsResult, "Naive CRS");
 
             //float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_naive_shared_one", 1, 64);
-           // Helpers.TestEquality(normalResult, crsResultSharedOne, "Naive CRS shared");
+            //    "spmm_csr_naive_shared_one", 1, 64,false);
+            //Helpers.TestEquality(normalResult, crsResultSharedOne, "Naive CRS shared");
 
-            int blockY = 64;
+
             //float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_warp",1, blockY);
-            //// Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
+            //    "spmm_csr_warp", 1, blockY,false);
+            //Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
 
             //float[] crsResultWarpShared = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_warp_shared", 1, blockY);
-             //Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp shared");
+            //    "spmm_csr_warp_shared", 1, blockY,false);
+            //Helpers.TestEquality(normalResult, crsResultWarpShared, "CRS warp shared");
+
+            //float[] crsResultWarpSharedY = SparseMatrixMatrixProd.CRSSparseMM(1,
+            //    "spmm_csr_warp_shared_Y", blockY,1,true);
+            //Helpers.TestEquality(normalResult, crsResultWarpSharedY, "CRS warp shared Y");
 
             float[] crsResultWarpSharedDouble = SparseMatrixMatrixProd.CRSSparseMM(1,
-                "spmm_csr_warp_shared_doubled", 2, blockY);
+                "spmm_csr_warp_shared_doubled", 2, blockY,false);
             Helpers.TestEquality(normalResult, crsResultWarpSharedDouble, "CRS warp shared doubled");
 
             
