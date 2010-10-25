@@ -101,19 +101,19 @@ namespace TestDotProduct
 
 
             //float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_warp", 1, blockY,false);
+            //    "spmm_csr_warp", 1, blockY, false);
             //Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
 
             //float[] crsResultWarpShared = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_warp_shared", 1, blockY,false);
+            //    "spmm_csr_warp_shared", 1, blockY, false);
             //Helpers.TestEquality(normalResult, crsResultWarpShared, "CRS warp shared");
 
-            //float[] crsResultWarpSharedY = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_warp_shared_Y", blockY,1,true);
-            //Helpers.TestEquality(normalResult, crsResultWarpSharedY, "CRS warp shared Y");
+            float[] crsResultWarpSharedY = SparseMatrixMatrixProd.CRSSparseMM(1,
+                "spmm_csr_warp_shared_Y", blockY, 1, true);
+            Helpers.TestEquality(normalResult, crsResultWarpSharedY, "CRS warp shared Y");
 
             float[] crsResultWarpSharedDouble = SparseMatrixMatrixProd.CRSSparseMM(1,
-                "spmm_csr_warp_shared_doubled", 2, blockY,false);
+                "spmm_csr_warp_shared_doubled", 2, blockY, false);
             Helpers.TestEquality(normalResult, crsResultWarpSharedDouble, "CRS warp shared doubled");
 
             

@@ -511,7 +511,7 @@ extern "C" __global__ void spmm_csr_warp_shared_Y(const float * AVals,
 
 
 
-#define BLOCK_XY  2*32
+#define BLOCK_XY  2*64
 //computes two sparse matrix product in CRS format, try to align memory access
 //in warps use shared memory to cache B column
 //AVals - values for first matrix
@@ -540,8 +540,8 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
 //!!!!!! not ready many errors !!!!!
 // do not use it !
 
-	__shared__ float sdata[2][BLOCK_SIZE + 16];                          // padded to avoid reduction ifs
-    __shared__ int ptrs[BLOCK_SIZE/WARP_SIZE][2];
+	__shared__ float sdata[2][BLOCK_XY + 16];                          // padded to avoid reduction ifs
+    __shared__ int ptrs[BLOCK_XY/WARP_SIZE][2];
 
 	__shared__ int svIdx[2][121];
 	__shared__ float svVals[2][121];
@@ -552,15 +552,17 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
 
 	const int threadPart=2*threadIdx.y+threadIdx.x;
 	// global thread index
-    const int thread_id   =gridDim.y*BLOCK_XY*blockIdx.x+BLOCK_XY* blockIdx.y + threadPart;
+    
+	const int thread_id   =BLOCK_XY* blockIdx.y + threadPart;
 	// thread index within the warp (0,31)
     const int thread_lane = threadPart & (WARP_SIZE-1);            
 	// global warp index
     const int warp_id     = thread_id   / WARP_SIZE;                
-	// warp index within the CTA
+	// warp index within the block (CTA)
     const int warp_lane   = threadPart / WARP_SIZE;                
 	// total number of active warps
-    const int num_warps   = (BLOCK_XY / WARP_SIZE) * gridDim.y*gridDim.x;  
+    
+	const int num_warps   = (blockDim.y / WARP_SIZE) * gridDim.y;//*gridDim.x;  
 
 	//index of first column in block in B matrix
 	//assume that blockDim.x==2
@@ -591,7 +593,7 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
     for(int row = warp_id; row < ARows; row += num_warps){
         // use two threads to fetch vecPointers[row] and vecPointers[row+1]
         // this is considerably faster than the straightforward version
-        if(thread_lane < 2 && threadIdx.x==0)
+        if(thread_lane < 2)
             ptrs[warp_lane][thread_lane] = APtrs[row + thread_lane];
         const int row_start = ptrs[warp_lane][0];   //same as: row_start = vecPointers[row];
         const int row_end   = ptrs[warp_lane][1];   //same as: row_end   = vecPointers[row+1];
@@ -612,7 +614,45 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
 			sum[1] += aVals * bVal2;
 		}
         // reduce local sums to row sum (ASSUME: warpsize 32)
-        sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x];
+
+		/*
+		sdata[threadIdx.x][threadPart] = sum[threadIdx.x];
+		sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart + 16]; 
+		__syncthreads(); 
+		sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart + 8]; 
+		__syncthreads();
+		sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart + 4]; 
+		__syncthreads();
+		sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart + 2]; 
+		__syncthreads();
+		sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart + 1]; 
+		__syncthreads();
+		*/
+		
+        sdata[0][threadPart] = sum[0];
+		sdata[1][threadPart] = sum[1];
+        sdata[0][threadPart] = sum[0] = sum[0] + sdata[0][threadPart + 16]; 
+		sdata[1][threadPart] = sum[1] = sum[1] + sdata[1][threadPart + 16]; 
+		__syncthreads(); 
+        //sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart +  8]; 
+		sdata[0][threadPart] = sum[0] = sum[0] + sdata[0][threadPart + 8]; 
+		sdata[1][threadPart] = sum[1] = sum[1] + sdata[1][threadPart + 8]; 
+		__syncthreads();
+       // sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart +  4]; 
+		sdata[0][threadPart] = sum[0] = sum[0] + sdata[0][threadPart + 4]; 
+		sdata[1][threadPart] = sum[1] = sum[1] + sdata[1][threadPart + 4]; 
+		__syncthreads();
+        //sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart +  2]; 
+		sdata[0][threadPart] = sum[0] = sum[0] + sdata[0][threadPart + 2]; 
+		sdata[1][threadPart] = sum[1] = sum[1] + sdata[1][threadPart + 2]; 
+		__syncthreads();
+        //sdata[threadIdx.x][threadPart] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadPart +  1];
+		sdata[0][threadPart] = sum[0] = sum[0] + sdata[0][threadPart + 1]; 
+		sdata[1][threadPart] = sum[1] = sum[1] + sdata[1][threadPart + 1]; 
+		__syncthreads();
+
+
+		/*sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x];
         sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y + 16]; 
 		__syncthreads(); 
         sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y +  8]; 
@@ -622,14 +662,13 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
         sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y +  2]; 
 		__syncthreads();
         sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y +  1];
-		__syncthreads();
+		__syncthreads();*/
 
         // first thread writes warp result
-		if (thread_lane <2){
-            //results[row] += sdata[threadIdx.x];
-			//result[row] =sdata[threadIdx.x];
-			//dupa tutaj 
-			result[row*BCols+col+thread_lane] = sdata[threadIdx.x][threadIdx.y];
+		if (thread_lane <1){
+            
+			result[row*BCols+col] = sdata[0][threadPart];
+			result[row*BCols+col+1] = sdata[1][threadPart];
 		}
 	}
 			
