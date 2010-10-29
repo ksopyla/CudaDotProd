@@ -64,7 +64,7 @@ namespace TestDotProduct
         static float Gamma = 1f / 16;
 
         static int StartingIndex = 2;
-        static int Repetition = 100;
+        static int Repetition = 10;
 
         static void Main(string[] args)
         {
@@ -72,11 +72,11 @@ namespace TestDotProduct
 
             DetailCudaDriver();
 
-           // CudaDotProductExperiments();
+            CudaDotProductExperiments();
 
            // CudaRBFProductExperiments();
 
-            CudaSparseMatrixExperiments();
+           // CudaSparseMatrixExperiments();
 
 
             Console.WriteLine();
@@ -1208,21 +1208,7 @@ namespace TestDotProduct
             {
 
                 //float[] tempFloatarr = new float[memSize];
-                unsafe
-                {
-
-                    float* vecPtr = (float*)mainVecIntPtr.ToPointer();
-
-                    for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
-                    {
-                        int idx = vecIdx[j];
-                        float val = vecVals[j];
-                        vecPtr[idx] = val;
-
-                       
-                    }
-
-                }
+               Helpers.InitBuffer(vecVals, vecIdx, vecLenght,mainIndex, mainVecIntPtr);
                 
                 //Marshal.Copy(mainVecIntPtr, tempFloatarr, 0, tempFloatarr.Length);
                 
@@ -1238,21 +1224,11 @@ namespace TestDotProduct
                 //mainVec = new float[maxIndex + 1];
                 //Array.Clear(mainVec, 0, mainVec.Length);
 
-
+               
                 //clear previous vector values
-                unsafe
-                {
 
-                    float* vecPtr = (float*)mainVecIntPtr.ToPointer();
 
-                    for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
-                    {
-                        int idx = vecIdx[j];
-                        float val = vecVals[j];
-                        vecPtr[idx] = 0;
-                    }
-
-                }
+                Helpers.SetBufferIdx(vecIdx, vecLenght,mainIndex, mainVecIntPtr,0.0f);
                 mainIndex++;
 
             }
@@ -1291,6 +1267,10 @@ namespace TestDotProduct
 
             return output;
         }
+
+        
+
+       
 
         private static float[] NormalDotProd(int repetition)
         {

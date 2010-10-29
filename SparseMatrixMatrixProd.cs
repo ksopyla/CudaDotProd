@@ -237,9 +237,17 @@ namespace TestDotProduct
 
             //create dense vector for each column in B matrix
             float[] mainVec = new float[maxIndex + 1];
-
-            CUdeviceptr mainVecPtr = cuda.CopyHostToDevice(mainVec);
+            
             uint memSize = (uint)((maxIndex + 1) * sizeof(float));
+            
+            CUstream stream0 =cuda.CreateStream();
+                        
+            IntPtr mainVecIPtr = cuda.HostAllocate(memSize,CUDADriver.CU_MEMHOSTALLOC_WRITECOMBINED);
+            
+            //CUdeviceptr mainVecPtr = cuda.GetHostDevicePointer(mainVecIPtr, 0);
+            //CUdeviceptr mainVecPtr = cuda.CopyHostToDevice(mainVec);
+            
+            CUdeviceptr mainVecPtr=cuda.CopyHostToDeviceAsync(mainVecIPtr,memSize,stream0);
             
             //get texture reference
             CUtexref cuTexRef = cuda.GetModuleTexture(module, "vecTexRef");
@@ -266,10 +274,8 @@ namespace TestDotProduct
 
             cuda.SetParameter(cuFunc, offset, (uint)Rows);
             offset += sizeof(int);
-            cuda.SetParameter(cuFunc, offset, (uint)Cols);
-            offset += sizeof(int);
-
-            int lastParamOffset = offset;
+            
+            int indexParamOffset = offset;
             cuda.SetParameter(cuFunc, offset, (uint)maxIndex);
             offset += sizeof(int);
             cuda.SetParameterSize(cuFunc, (uint)offset);
@@ -280,21 +286,30 @@ namespace TestDotProduct
             CUevent end = cuda.CreateEvent();
 
             
-            int gridDimX = (int)Math.Ceiling((Cols + 0.0) / (blockSizeX));
-          
+            int gridDimX = (int)Math.Ceiling((Rows + 0.0) / (blockSizeX));
+            int gridDim= (Rows + blockSizeX - 1) / blockSizeX;
+
+            
+
             Stopwatch timer = Stopwatch.StartNew();
             cuda.RecordEvent(start);
             for (int rep = 0; rep < repetition; rep++)
             {
                 for (int k = 0; k < Cols; k++)
                 {
-                    Helpers.InitMainVector(BVals, BIdx, BRowLen, k,ref mainVec);
+                    //Helpers.InitMainVector(BVals, BIdx, BRowLen, k,ref mainVec);
 
-                    //cuda.SynchronizeContext();
+                    Helpers.InitBuffer(BVals, BIdx, BRowLen, k, mainVecIPtr);
+
                     //make asynchronius copy and kernel lauch
-                    cuda.CopyHostToDevice(mainVecPtr, mainVec);
+                    cuda.CopyHostToDeviceAsync(mainVecIPtr, memSize, stream0);
 
-                    cuda.Launch(cuFunc, gridDimX, 1);
+                    cuda.SetParameter(cuFunc, indexParamOffset,(uint) k);
+
+                    cuda.LaunchAsync(cuFunc, gridDimX, 1, stream0);
+
+                    //clear host buffer
+                    Helpers.SetBufferIdx(BIdx, BRowLen, k, mainVecIPtr, 0.0f);
                 }
             }
             cuda.RecordEvent(end);
@@ -304,6 +319,7 @@ namespace TestDotProduct
             float cudaTime = cuda.ElapsedTime(start, end);
 
             Marshal.Copy(outputPtr2, output, 0, outputSize);
+            
             Console.WriteLine("Matrix products with kernel {0}", moduleFunction);
             Console.WriteLine("  takes {0} ms stopwatch time {1} ms", cudaTime, timer.Elapsed);
 

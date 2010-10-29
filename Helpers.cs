@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace TestDotProduct
 {
@@ -75,7 +76,60 @@ namespace TestDotProduct
             }
         }
 
+        /// <summary>
+        ///  sets the values from one row of matrix, 
+        ///  matrix is in sparse matrix in CSR format
+        /// </summary>
+        /// <param name="matVals">matrx values</param>
+        /// <param name="matIdx">matrix indices</param>
+        /// <param name="matRowLenght">matrix rows lenght</param>
+        /// <param name="index">row index</param>
+        ///<param name="mainVecIntPtr">pointer to float dense vector</param>
+        unsafe public static void InitBuffer(float[] matVals, int[] matIdx, int[] matRowLenght, int index, IntPtr mainVecIntPtr)
+        {
+            
+            unsafe
+            {
 
+                float* vecPtr = (float*)mainVecIntPtr.ToPointer();
+
+                for (int j = matRowLenght[index]; j < matRowLenght[index + 1]; j++)
+                {
+                    int idx = matIdx[j];
+                    float val = matVals[j];
+                    vecPtr[idx] = val;
+
+
+                }
+
+            }
+
+        }
+
+        /// <summary>
+        ///  sets the value for one matrix row, 
+        ///  matrix is in sparse matrix in CSR format
+        /// </summary>
+        /// <param name="matVals">matrx values</param>
+        /// <param name="matIdx">matrix indices</param>
+        /// <param name="matRowLenght">matrix rows lenght</param>
+        /// <param name="index">row index</param>
+        ///<param name="mainVecIntPtr">pointer to float dense vector</param>
+        unsafe public static void SetBufferIdx(int[] matIdx, int[] matRowLenght, int index, IntPtr mainVecIntPtr, float value)
+        {
+            unsafe
+            {
+
+                float* vecPtr = (float*)mainVecIntPtr.ToPointer();
+
+                for (int j = matRowLenght[index]; j < matRowLenght[index + 1]; j++)
+                {
+                    int idx = matIdx[j];
+                    vecPtr[idx] = 0;
+                }
+
+            }
+        }
 
        /// <summary>
        /// test equality of two arrays
