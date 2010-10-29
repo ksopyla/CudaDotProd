@@ -1029,7 +1029,7 @@ namespace TestDotProduct
             for (int k = 0; k < repetition; k++)
             {
                 //normal memory management
-                InitMainVector(vecVals, vecIdx, vecLenght, mainVec);
+              Helpers.InitMainVector(vecVals, vecIdx, vecLenght,mainIndex,ref mainVec);
 
 
                 ////copy to texture
@@ -1045,16 +1045,7 @@ namespace TestDotProduct
                // cuda.CopyDeviceToHost(dOutput, output);
                  Marshal.Copy(outputPtr2, output, 0, N);
 
-                
-                //mainVec = new float[maxIndex + 1];
-                //clear previous vector values
-               Array.Clear(mainVec, 0, mainVec.Length);
-                //for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
-                //{
-                //    int idx = vecIdx[j];
-                //    float val = vecVals[j];
-                //    mainVec[idx] = 0;
-                //}
+               
                 mainIndex++;
             }
 
@@ -1094,15 +1085,15 @@ namespace TestDotProduct
             return output;
         }
 
-        private static void InitMainVector(float[] vecVals, int[] vecIdx, int[] vecLenght, float[] mainVec)
-        {
-            for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
-            {
-                int idx = vecIdx[j];
-                float val = vecVals[j];
-                mainVec[idx] = val;
-            }
-        }
+        //private static void InitMainVector(float[] vecVals, int[] vecIdx, int[] vecLenght, float[] mainVec)
+        //{
+        //    for (int j = vecLenght[mainIndex]; j < vecLenght[mainIndex + 1]; j++)
+        //    {
+        //        int idx = vecIdx[j];
+        //        float val = vecVals[j];
+        //        mainVec[idx] = val;
+        //    }
+        //}
 
 
         private static float[] CuDotProdCSRwriteCombined(int repetition)

@@ -190,7 +190,156 @@ namespace TestDotProduct
         }
 
 
+        public static float[] CRSSparseMMwithDenseVector(int repetition,
+            string moduleFunction, int blockSizeX, int blockSizeY)
+        {
+            CUDA cuda = new CUDA(0, true);
 
+            // load module
+            CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "matrixKernels.cubin"));
+
+            CUfunction cuFunc = cuda.GetModuleFunction(moduleFunction);
+
+            int maxRowSize = avgElements + stdElements - 1;
+
+            Console.WriteLine("------------------------------------");
+            Console.WriteLine("init Matrix");
+            Stopwatch t = Stopwatch.StartNew();
+
+            //values in CRS format
+            float[] AVals, BVals;
+            //indexes in Crs format
+            int[] AIdx, BIdx;
+            //Lenght of each row in CRS format
+            int[] ARowLen, BRowLen;
+            
+            int maxIndex = 0;
+            MakeRandCrsSparseMatrix(Rows, maxRowSize, out AVals, out AIdx, out ARowLen, out maxIndex);
+
+            // DisplayCrsMatrix(AVals, AIdx, ARowLen,maxIndex);
+            MakeRandCrsSparseMatrix(Cols, maxRowSize, out BVals, out BIdx, out BRowLen, out maxIndex);
+            //DisplayCrsMatrix(BVals, BIdx, BRowLen, maxIndex);
+
+
+            Console.WriteLine("Init takes {0}", t.Elapsed);
+            t.Start();
+
+            CUdeviceptr AValsPtr = cuda.CopyHostToDevice(AVals);
+            CUdeviceptr AIdxPtr = cuda.CopyHostToDevice(AIdx);
+            CUdeviceptr ALenghtPtr = cuda.CopyHostToDevice(ARowLen);
+
+            int outputSize = Rows * Cols;
+            float[] output = new float[outputSize];
+            
+            //allocate memory for output
+            IntPtr outputPtr2 = cuda.HostAllocate((uint)(outputSize * sizeof(float)), CUDADriver.CU_MEMHOSTALLOC_DEVICEMAP);
+            CUdeviceptr dOutput = cuda.GetHostDevicePointer(outputPtr2, 0);
+
+            //create dense vector for each column in B matrix
+            float[] mainVec = new float[maxIndex + 1];
+
+            CUdeviceptr mainVecPtr = cuda.CopyHostToDevice(mainVec);
+            uint memSize = (uint)((maxIndex + 1) * sizeof(float));
+            
+            //get texture reference
+            CUtexref cuTexRef = cuda.GetModuleTexture(module, "vecTexRef");
+            cuda.SetTextureFlags(cuTexRef, 0);
+            cuda.SetTextureAddress(cuTexRef, mainVecPtr, memSize);
+
+            Console.WriteLine("copy to device takes {0}", t.Elapsed);
+            #region set cuda parameters
+
+            int Aelements = AVals.Length;
+
+            cuda.SetFunctionBlockShape(cuFunc, blockSizeX, blockSizeY, 1);
+            
+            int offset = 0;
+            cuda.SetParameter(cuFunc, offset, AValsPtr.Pointer);
+            offset += IntPtr.Size;
+            cuda.SetParameter(cuFunc, offset, AIdxPtr.Pointer);
+            offset += IntPtr.Size;
+            cuda.SetParameter(cuFunc, offset, ALenghtPtr.Pointer);
+            offset += IntPtr.Size;
+            
+            cuda.SetParameter(cuFunc, offset, dOutput.Pointer);
+            offset += IntPtr.Size;
+
+            cuda.SetParameter(cuFunc, offset, (uint)Rows);
+            offset += sizeof(int);
+            cuda.SetParameter(cuFunc, offset, (uint)Cols);
+            offset += sizeof(int);
+
+            int lastParamOffset = offset;
+            cuda.SetParameter(cuFunc, offset, (uint)maxIndex);
+            offset += sizeof(int);
+            cuda.SetParameterSize(cuFunc, (uint)offset);
+            #endregion
+            Console.WriteLine("start computation");
+
+            CUevent start = cuda.CreateEvent();
+            CUevent end = cuda.CreateEvent();
+
+            
+            int gridDimX = (int)Math.Ceiling((Cols + 0.0) / (blockSizeX));
+          
+            Stopwatch timer = Stopwatch.StartNew();
+            cuda.RecordEvent(start);
+            for (int rep = 0; rep < repetition; rep++)
+            {
+                for (int k = 0; k < Cols; k++)
+                {
+                    Helpers.InitMainVector(BVals, BIdx, BRowLen, k,ref mainVec);
+
+                    //cuda.SynchronizeContext();
+                    //make asynchronius copy and kernel lauch
+                    cuda.CopyHostToDevice(mainVecPtr, mainVec);
+
+                    cuda.Launch(cuFunc, gridDimX, 1);
+                }
+            }
+            cuda.RecordEvent(end);
+            cuda.SynchronizeContext();
+            
+            timer.Stop();
+            float cudaTime = cuda.ElapsedTime(start, end);
+
+            Marshal.Copy(outputPtr2, output, 0, outputSize);
+            Console.WriteLine("Matrix products with kernel {0}", moduleFunction);
+            Console.WriteLine("  takes {0} ms stopwatch time {1} ms", cudaTime, timer.Elapsed);
+
+
+            int lenght = displayCount;// Math.Min(displayCount, Rows);
+            Console.WriteLine();
+            for (int i = 0; i < lenght; i++)
+            {
+                Console.WriteLine("{0}-{1}", i, output[i]);
+            }
+
+            cuda.Free(AValsPtr);
+            cuda.Free(AIdxPtr);
+            cuda.Free(ALenghtPtr);
+            cuda.Free(dOutput);
+            cuda.DestroyEvent(start);
+            cuda.DestroyEvent(end);
+
+            cuda.Free(mainVecPtr);
+            cuda.DestroyTexture(cuTexRef);
+            
+            return output;
+        }
+
+        
+        
+        
+        
+       
+
+
+        /// <summary>
+        /// Normal naive method for matrix multiplication
+        /// </summary>
+        /// <param name="repetition"></param>
+        /// <returns></returns>
         public static float[] NormalCRSSparseMM(int repetition)
         {
 

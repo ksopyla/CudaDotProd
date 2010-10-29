@@ -33,6 +33,13 @@ namespace TestDotProduct
             return index;
         }
 
+       /// <summary>
+       /// creates 
+       /// </summary>
+       /// <param name="i"></param>
+       /// <param name="size"></param>
+       /// <param name="maxVal"></param>
+       /// <returns></returns>
         public static float[] InitValues(int i, int size, int maxVal)
         {
             Random rnd = new Random(RandomSeed);
@@ -47,6 +54,35 @@ namespace TestDotProduct
             return vals;
         }
 
+        /// <summary>
+        ///  creates dense vector from one row of mat sparse matrix in CSR format
+        /// </summary>
+        /// <param name="matVals">matrx values</param>
+        /// <param name="matIdx">matrix indices</param>
+        /// <param name="matRowLen">matrix rows lenght</param>
+        /// <param name="mainIndex">row index</param>
+        /// <param name="mainVec">modified dense array</param>
+        public static void InitMainVector(float[] matVals, int[] matIdx, int[] matRowLen, 
+                                        int mainIndex,ref float[] mainVec)
+        {
+            Array.Clear(mainVec, 0, mainVec.Length);
+
+            for (int j = matRowLen[mainIndex]; j < matRowLen[mainIndex + 1]; j++)
+            {
+                int idx = matIdx[j];
+                float val = matVals[j];
+                mainVec[idx] = val;
+            }
+        }
+
+
+
+       /// <summary>
+       /// test equality of two arrays
+       /// </summary>
+       /// <param name="arr1"></param>
+       /// <param name="arr2"></param>
+       /// <param name="info"></param>
         public static void TestEquality(float[] arr1, float[] arr2,string info)
         {
             if (arr1.Length != arr2.Length)
