@@ -196,7 +196,8 @@ namespace TestDotProduct
             CUDA cuda = new CUDA(0, true);
 
             // load module
-            CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "matrixKernels.cubin"));
+
+            CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "structKernel.cubin"));
 
             CUfunction cuFunc = cuda.GetModuleFunction(moduleFunction);
 
@@ -250,7 +251,7 @@ namespace TestDotProduct
             CUdeviceptr mainVecPtr=cuda.CopyHostToDeviceAsync(mainVecIPtr,memSize,stream0);
             
             //get texture reference
-            CUtexref cuTexRef = cuda.GetModuleTexture(module, "vecTexRef");
+            CUtexref cuTexRef = cuda.GetModuleTexture(module, "texRef");
             cuda.SetTextureFlags(cuTexRef, 0);
             cuda.SetTextureAddress(cuTexRef, mainVecPtr, memSize);
 

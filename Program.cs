@@ -72,11 +72,11 @@ namespace TestDotProduct
 
             DetailCudaDriver();
 
-            CudaDotProductExperiments();
+            //CudaDotProductExperiments();
 
            // CudaRBFProductExperiments();
 
-           // CudaSparseMatrixExperiments();
+            CudaSparseMatrixExperiments();
 
 
             Console.WriteLine();
@@ -112,9 +112,14 @@ namespace TestDotProduct
                 "spmm_csr_warp_shared_Y", blockY, 1, true);
             Helpers.TestEquality(normalResult, crsResultWarpSharedY, "CRS warp shared Y");
 
-            float[] crsResultWarpSharedDouble = SparseMatrixMatrixProd.CRSSparseMM(1,
-                "spmm_csr_warp_shared_doubled", 2, blockY, false);
-            Helpers.TestEquality(normalResult, crsResultWarpSharedDouble, "CRS warp shared doubled");
+            //float[] crsResultWarpSharedDouble = SparseMatrixMatrixProd.CRSSparseMM(1,
+            //    "spmm_csr_warp_shared_doubled", 2, blockY, false);
+            //Helpers.TestEquality(normalResult, crsResultWarpSharedDouble, "CRS warp shared doubled");
+
+
+            float[] crsResultAsyncDenseVec = SparseMatrixMatrixProd.CRSSparseMMwithDenseVector(1,
+                "spmv_csr_vector_kernel", 256, 1);
+            Helpers.TestEquality(normalResult, crsResultAsyncDenseVec, "CRS async dense vec");
 
             
         }
