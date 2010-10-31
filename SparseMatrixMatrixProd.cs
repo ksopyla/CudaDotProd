@@ -197,7 +197,7 @@ namespace TestDotProduct
 
             // load module
 
-            CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "matrixKenels.cubin"));
+            CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "matrixKernels.cubin"));
 
             CUfunction cuFunc = cuda.GetModuleFunction(moduleFunction);
 
