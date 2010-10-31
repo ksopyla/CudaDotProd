@@ -4,6 +4,7 @@
 
 */
 
+texture<float,1,cudaReadModeElementType> vectorTexRef;
 //helper functions
 
 //Use binary search algorith to find index and value in B matrix
@@ -674,122 +675,59 @@ extern "C" __global__ void spmm_csr_warp_shared_doubled(const float * AVals,
 			
 }
 
-//computes two sparse matrix product in CRS format, try to align memory access
-//in warps use shared memory to cache B column
+//computes two sparse matrix product, matrix A is in CRS format, matrix B is 
+//divided into set of block kolumn (each kolumn is in dense format, in texture cache)
 //AVals - values for first matrix
 //AIdx - indexes for first matrix
 //APtrs - pointers to next vector
-//BVals - values for second matrix
-//BIdx - indexes for second matrix
-//BPtrs - pointers to next vectors 
 //result - result matrix
 //ARows - number of rows in first matrix
 //BCols - number of cols in second matrix
-extern "C" __global__ void spmm_csr_warp_shared_doubled_test(const float * AVals,
+//csr vector kernel for linear dot product
+extern "C" __global__ void spmm_csr_dense_vector(const float * AVals,
 									   const int * AIdx, 
-									   const int * APtrs,
-									   const float * BVals,
-									   const int * BIdx, 
-									   const int * BPtrs,
+									   const int * APtrs, 
 									   float * result,
 									   const int ARows,
 									   const int BCols,
-									   const int AElements,
-									   const int BElements)
+									   const int ColumnIndex)
 {
-
-
-//!!!!!! not ready many errors !!!!!
-// do not use it !
-
-	__shared__ float sdata[2][BLOCK_SIZE + 16];                          // padded to avoid reduction ifs
+    __shared__ float sdata[BLOCK_SIZE + 16];                          // padded to avoid reduction ifs
     __shared__ int ptrs[BLOCK_SIZE/WARP_SIZE][2];
-
-	__shared__ int svIdx[2][121];
-	__shared__ float svVals[2][121];
     
-	//stores "start" and "end" of column
-	__shared__ int bShPtrs[2][2];
-	// global thread index
-    const int thread_id   = BLOCK_SIZE * blockIdx.y + threadIdx.y;  
-	// thread index within the warp (0,31)
-    const int thread_lane = threadIdx.y & (WARP_SIZE-1);            
-	// global warp index
-    const int warp_id     = thread_id   / WARP_SIZE;                
-	// warp index within the CTA
-    const int warp_lane   = threadIdx.y / WARP_SIZE;                
-	// total number of active warps
-    const int num_warps   = (BLOCK_SIZE / WARP_SIZE) * gridDim.y;  
-
-	//index of first column in block in B matrix
-	//assume that blockDim.x==2
-	const int col = blockDim.x*blockIdx.x; //+threadIdx.x;
-
-	//copy pointers to each column to shared memory
-	if(threadIdx.y<2)
-	{
-		//blockDim.x must equal 2
-		//bShPtrs[threadIdx.x][threadIdx.y]=BPtrs[col+threadIdx.y];
-		
-		//if col is computed without adding threadIdx.x then above
-		//line has an error and pointers should be set this way
-		bShPtrs[threadIdx.x][threadIdx.y]=BPtrs[col+threadIdx.y+threadIdx.x];
-	}
-	__syncthreads();
-
-	//copy vals and indexes for two column to shared mem.
-	for(int th=threadIdx.y; th<(bShPtrs[threadIdx.x][1]-bShPtrs[threadIdx.x][0]);th+=blockDim.y)
-	{
-		svVals[threadIdx.x][th]= BVals[bShPtrs[threadIdx.x][0]+th];
-		svIdx[threadIdx.x][th]=BIdx[bShPtrs[threadIdx.x][0]+th];
-	}
-	__syncthreads();
-
-	
+    const int thread_id   = BLOCK_SIZE * blockIdx.x + threadIdx.x;  // global thread index
+    const int thread_lane = threadIdx.x & (WARP_SIZE-1);            // thread index within the warp
+    const int warp_id     = thread_id   / WARP_SIZE;                // global warp index
+    const int warp_lane   = threadIdx.x / WARP_SIZE;                // warp index within the CTA
+    const int num_warps   = (BLOCK_SIZE / WARP_SIZE) * gridDim.x;   // total number of active warps
 
     for(int row = warp_id; row < ARows; row += num_warps){
-        // use two threads to fetch vecPointers[row] and vecPointers[row+1]
+        // use two threads to fetch Ap[row] and Ap[row+1]
         // this is considerably faster than the straightforward version
-        if(thread_lane < 2 && threadIdx.x==0)
+        if(thread_lane < 2)
             ptrs[warp_lane][thread_lane] = APtrs[row + thread_lane];
-        const int row_start = ptrs[warp_lane][0];   //same as: row_start = vecPointers[row];
-        const int row_end   = ptrs[warp_lane][1];   //same as: row_end   = vecPointers[row+1];
+        const int row_start = ptrs[warp_lane][0];                   //same as: row_start = Ap[row];
+        const int row_end   = ptrs[warp_lane][1];                   //same as: row_end   = Ap[row+1];
 
-        // compute local sum for two row and two column
-		float sum[2] = {0,0};
-		
-		float bVal1=0;
-		float bVal2=0;
-
+        // compute local sum
+        float sum = 0;
         for(int jj = row_start + thread_lane; jj < row_end; jj += WARP_SIZE)
-		{
-			int aIdx=AIdx[jj];
-			bVal1=FindValForBIdx(svIdx[0],svVals[0],aIdx,0,	bShPtrs[0][1]-bShPtrs[0][0]);
-			bVal2=FindValForBIdx(svIdx[1],svVals[1],aIdx,0,	bShPtrs[1][1]-bShPtrs[1][0]);
-			float aVals = AVals[jj];
-            sum[0] += aVals * bVal1;
-			sum[1] += aVals * bVal2;
-		}
+            sum += AVals[jj] * tex1Dfetch(vectorTexRef,AIdx[jj]);
+
         // reduce local sums to row sum (ASSUME: warpsize 32)
-        sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x];
-        sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y + 16]; 
-		__syncthreads(); 
-        sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y +  8]; 
-		__syncthreads();
-        sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y +  4]; 
-		__syncthreads();
-        sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y +  2]; 
-		__syncthreads();
-        sdata[threadIdx.x][threadIdx.y] = sum[threadIdx.x] = sum[threadIdx.x] + sdata[threadIdx.x][threadIdx.y +  1];
-		__syncthreads();
+        sdata[threadIdx.x] = sum;
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x + 16]; __syncthreads(); 
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  8]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  4]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  2]; __syncthreads();
+        sdata[threadIdx.x] = sum = sum + sdata[threadIdx.x +  1]; __syncthreads();
+       
+
 
         // first thread writes warp result
-		if (thread_lane <2){
-            //results[row] += sdata[threadIdx.x];
-			//result[row] =sdata[threadIdx.x];
-			//dupa tutaj 
-			result[row*BCols+col+thread_lane] = sdata[threadIdx.x][threadIdx.y];
-		}
-	}
+        if (thread_lane == 0)
+            result[row*BCols+ColumnIndex]= sdata[threadIdx.x];
+		
 			
+    }
 }

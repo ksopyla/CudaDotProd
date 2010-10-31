@@ -197,7 +197,7 @@ namespace TestDotProduct
 
             // load module
 
-            CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "structKernel.cubin"));
+            CUmodule module = cuda.LoadModule(Path.Combine(Environment.CurrentDirectory, "matrixKenels.cubin"));
 
             CUfunction cuFunc = cuda.GetModuleFunction(moduleFunction);
 
@@ -251,7 +251,7 @@ namespace TestDotProduct
             CUdeviceptr mainVecPtr=cuda.CopyHostToDeviceAsync(mainVecIPtr,memSize,stream0);
             
             //get texture reference
-            CUtexref cuTexRef = cuda.GetModuleTexture(module, "texRef");
+            CUtexref cuTexRef = cuda.GetModuleTexture(module, "vectorTexRef");
             cuda.SetTextureFlags(cuTexRef, 0);
             cuda.SetTextureAddress(cuTexRef, mainVecPtr, memSize);
 
@@ -275,9 +275,11 @@ namespace TestDotProduct
 
             cuda.SetParameter(cuFunc, offset, (uint)Rows);
             offset += sizeof(int);
+            cuda.SetParameter(cuFunc, offset, (uint)Cols);
+            offset += sizeof(int);
             
-            int indexParamOffset = offset;
-            cuda.SetParameter(cuFunc, offset, (uint)maxIndex);
+            int colIndexParamOffset = offset;
+            cuda.SetParameter(cuFunc, offset, (uint)0);
             offset += sizeof(int);
             cuda.SetParameterSize(cuFunc, (uint)offset);
             #endregion
@@ -305,7 +307,7 @@ namespace TestDotProduct
                     //make asynchronius copy and kernel lauch
                     cuda.CopyHostToDeviceAsync(mainVecIPtr, memSize, stream0);
 
-                    cuda.SetParameter(cuFunc, indexParamOffset,(uint) k);
+                    cuda.SetParameter(cuFunc, colIndexParamOffset,(uint) k);
 
                     cuda.LaunchAsync(cuFunc, gridDimX, 1, stream0);
 

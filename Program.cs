@@ -118,7 +118,7 @@ namespace TestDotProduct
 
 
             float[] crsResultAsyncDenseVec = SparseMatrixMatrixProd.CRSSparseMMwithDenseVector(1,
-                "spmv_csr_vector_kernel", 256, 1);
+                "spmm_csr_dense_vector", 256, 1);
             Helpers.TestEquality(normalResult, crsResultAsyncDenseVec, "CRS async dense vec");
 
             
