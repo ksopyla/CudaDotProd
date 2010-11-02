@@ -6,6 +6,7 @@ using GASS.CUDA;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace TestDotProduct
 {
@@ -15,7 +16,7 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 2*1024;
+        public const int Rows = 16*1024;
         public const int Cols = 1024;
 
         public const int displayCount=0;
@@ -242,14 +243,29 @@ namespace TestDotProduct
             uint memSize = (uint)((maxIndex + 1) * sizeof(float));
             
             CUstream stream0 =cuda.CreateStream();
-                        
-            IntPtr mainVecIPtr = cuda.HostAllocate(memSize,CUDADriver.CU_MEMHOSTALLOC_WRITECOMBINED);
-            
-            //CUdeviceptr mainVecPtr = cuda.GetHostDevicePointer(mainVecIPtr, 0);
-            //CUdeviceptr mainVecPtr = cuda.CopyHostToDevice(mainVec);
-            
-            CUdeviceptr mainVecPtr=cuda.CopyHostToDeviceAsync(mainVecIPtr,memSize,stream0);
-            
+                       
+ 
+            IntPtr[] mainVecIntPtrs= new IntPtr[2];
+
+            //write combined memory allocation
+            //IntPtr mainVecIPtr = cuda.HostAllocate(memSize,CUDADriver.CU_MEMHOSTALLOC_WRITECOMBINED);
+            //CUdeviceptr mainVecPtr=cuda.CopyHostToDeviceAsync(mainVecIPtr,memSize,stream0);
+
+            //
+            //mainVecIntPtrs[0] = cuda.HostAllocate(memSize, CUDADriver.CU_MEMHOSTALLOC_WRITECOMBINED);
+            //mainVecIntPtrs[1] = cuda.HostAllocate(memSize, CUDADriver.CU_MEMHOSTALLOC_WRITECOMBINED);
+
+            mainVecIntPtrs[0] = cuda.AllocateHost(memSize);
+            mainVecIntPtrs[1] = cuda.AllocateHost(memSize);
+            CUdeviceptr mainVecPtr = cuda.CopyHostToDeviceAsync(mainVecIntPtrs[0], memSize, stream0);
+
+            //IntPtr mainVecIPtr = cuda.HostAllocate(memSize,CUDADriver.CU_MEMHOSTALLOC_PORTABLE);
+            //CUdeviceptr mainVecPtr=cuda.CopyHostToDeviceAsync(mainVecIPtr,memSize,stream0);
+
+            //mapped memory allocation
+            //IntPtr mainVecIPtr = cuda.HostAllocate(memSize, CUDADriver.CU_MEMHOSTALLOC_DEVICEMAP);
+            //CUdeviceptr mainVecPtr = cuda.CopyHostToDevice(mainVecIPtr, memSize);
+
             //get texture reference
             CUtexref cuTexRef = cuda.GetModuleTexture(module, "vectorTexRef");
             cuda.SetTextureFlags(cuTexRef, 0);
@@ -300,19 +316,26 @@ namespace TestDotProduct
             {
                 for (int k = 0; k < Cols; k++)
                 {
-                    //Helpers.InitMainVector(BVals, BIdx, BRowLen, k,ref mainVec);
 
-                    Helpers.InitBuffer(BVals, BIdx, BRowLen, k, mainVecIPtr);
+                    Helpers.InitBuffer(BVals, BIdx, BRowLen, k, mainVecIntPtrs[k % 2]);
 
-                    //make asynchronius copy and kernel lauch
-                    cuda.CopyHostToDeviceAsync(mainVecIPtr, memSize, stream0);
-
+                    cuda.SynchronizeStream(stream0);
+                    
+                    cuda.CopyHostToDeviceAsync(mainVecPtr, mainVecIntPtrs[k % 2], memSize, stream0);
                     cuda.SetParameter(cuFunc, colIndexParamOffset,(uint) k);
-
                     cuda.LaunchAsync(cuFunc, gridDimX, 1, stream0);
+                    //cuda.SynchronizeStream(stream0);
+                    ////clear host buffer
+                    Helpers.SetBufferIdx(BIdx, BRowLen, k-1, mainVecIntPtrs[(k+1) % 2], 0.0f);
 
-                    //clear host buffer
-                    Helpers.SetBufferIdx(BIdx, BRowLen, k, mainVecIPtr, 0.0f);
+                    //Helpers.InitBuffer(BVals, BIdx, BRowLen, k, mainVecIPtr);
+                    ////make asynchronius copy and kernel lauch
+                    //cuda.CopyHostToDeviceAsync(mainVecPtr, mainVecIPtr, memSize, stream0);
+                    //cuda.SetParameter(cuFunc, colIndexParamOffset,(uint) k);
+                    //cuda.LaunchAsync(cuFunc, gridDimX, 1, stream0);
+                    //cuda.SynchronizeStream(stream0);
+                    ////clear host buffer
+                    //Helpers.SetBufferIdx(BIdx, BRowLen, k, mainVecIPtr, 0.0f);
                 }
             }
             cuda.RecordEvent(end);
@@ -341,8 +364,10 @@ namespace TestDotProduct
             cuda.DestroyEvent(start);
             cuda.DestroyEvent(end);
 
+            cuda.DestroyStream(stream0);
             cuda.Free(mainVecPtr);
             cuda.DestroyTexture(cuTexRef);
+            
             
             return output;
         }

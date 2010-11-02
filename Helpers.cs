@@ -117,6 +117,8 @@ namespace TestDotProduct
         ///<param name="mainVecIntPtr">pointer to float dense vector</param>
         unsafe public static void SetBufferIdx(int[] matIdx, int[] matRowLenght, int index, IntPtr mainVecIntPtr, float value)
         {
+            if (index < 0)
+                return;
             unsafe
             {
 

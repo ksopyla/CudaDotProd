@@ -95,22 +95,22 @@ namespace TestDotProduct
             //    "spmm_csr_naive", 16, 16,false);
             //Helpers.TestEquality(normalResult, crsResult, "Naive CRS");
 
-            //float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_naive_shared_one", 1, 64,false);
-            //Helpers.TestEquality(normalResult, crsResultSharedOne, "Naive CRS shared");
+            float[] crsResultSharedOne = SparseMatrixMatrixProd.CRSSparseMM(1,
+                "spmm_csr_naive_shared_one", 1, blockY, false);
+            Helpers.TestEquality(normalResult, crsResultSharedOne, "Naive CRS shared");
 
 
-            //float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_warp", 1, blockY, false);
-            //Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
+            float[] crsResultWarp = SparseMatrixMatrixProd.CRSSparseMM(1,
+                "spmm_csr_warp", 1, blockY, false);
+            Helpers.TestEquality(normalResult, crsResultWarp, "CRS warp");
 
-            //float[] crsResultWarpShared = SparseMatrixMatrixProd.CRSSparseMM(1,
-            //    "spmm_csr_warp_shared", 1, blockY, false);
-            //Helpers.TestEquality(normalResult, crsResultWarpShared, "CRS warp shared");
+            float[] crsResultWarpShared = SparseMatrixMatrixProd.CRSSparseMM(1,
+                "spmm_csr_warp_shared", 1, blockY, false);
+            Helpers.TestEquality(normalResult, crsResultWarpShared, "CRS warp shared");
 
-            float[] crsResultWarpSharedY = SparseMatrixMatrixProd.CRSSparseMM(1,
-                "spmm_csr_warp_shared_Y", blockY, 1, true);
-            Helpers.TestEquality(normalResult, crsResultWarpSharedY, "CRS warp shared Y");
+            //float[] crsResultWarpSharedY = SparseMatrixMatrixProd.CRSSparseMM(1,
+            //    "spmm_csr_warp_shared_Y", blockY, 1, true);
+            //Helpers.TestEquality(normalResult, crsResultWarpSharedY, "CRS warp shared Y");
 
             //float[] crsResultWarpSharedDouble = SparseMatrixMatrixProd.CRSSparseMM(1,
             //    "spmm_csr_warp_shared_doubled", 2, blockY, false);
@@ -118,7 +118,7 @@ namespace TestDotProduct
 
 
             float[] crsResultAsyncDenseVec = SparseMatrixMatrixProd.CRSSparseMMwithDenseVector(1,
-                "spmm_csr_dense_vector", 256, 1);
+                "spmm_csr_dense_vector", blockY, 1);
             Helpers.TestEquality(normalResult, crsResultAsyncDenseVec, "CRS async dense vec");
 
             

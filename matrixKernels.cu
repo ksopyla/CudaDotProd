@@ -4,6 +4,9 @@
 
 */
 
+#define BLOCK_SIZE 64
+#define WARP_SIZE 32
+
 texture<float,1,cudaReadModeElementType> vectorTexRef;
 //helper functions
 
@@ -219,8 +222,7 @@ extern "C" __global__ void spmm_csr_naive_shared_one(const float * AVals,
 }
 
 
-#define BLOCK_SIZE 64
-#define WARP_SIZE 32
+
 //computes two sparse matrix product in CRS format, try to align memory access
 //in warps
 //AVals - values for first matrix
@@ -726,7 +728,12 @@ extern "C" __global__ void spmm_csr_dense_vector(const float * AVals,
 
         // first thread writes warp result
         if (thread_lane == 0)
-            result[row*BCols+ColumnIndex]= sdata[threadIdx.x];
+		{
+			//row major order
+			result[row*BCols+ColumnIndex]= sdata[threadIdx.x];
+			//column major order
+			//result[ColumnIndex*ARows+row]= sdata[threadIdx.x];
+		}
 		
 			
     }
