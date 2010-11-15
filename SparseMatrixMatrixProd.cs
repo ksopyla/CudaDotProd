@@ -16,7 +16,7 @@ namespace TestDotProduct
     /// </summary>
     public class SparseMatrixMatrixProd
     {
-        public const int Rows = 16*1024;
+        public const int Rows = 6*1024;
         public const int Cols = 1024;
 
         public const int displayCount=0;
@@ -24,6 +24,7 @@ namespace TestDotProduct
 
         public static int avgElements= 80;
         public static int stdElements = 20;
+
 
         /// <summary>
         /// implementation of sparese matrix product

@@ -76,6 +76,6 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>nvcc structKernel.cu cudaSVMKernels.cu  matrixKernels.cu --cubin   -ccbin "c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin" -m32</PostBuildEvent>
+    <PostBuildEvent>nvcc structKernel.cu cudaSVMKernels.cu  matrixKernels.cu --cubin   -ccbin "%25VS90COMNTOOLS%25../../VC/bin" -m32</PostBuildEvent>
   </PropertyGroup>
 </Project>

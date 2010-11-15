@@ -1,7 +1,8 @@
-Project for testing some sparse matrix-vector multiplication wiht CUDA and .net
+﻿Project for testing some sparse matrix-vector and matrix-matrix multiplication wiht CUDA and .net.
 
-It contains few different examples usefull for teaching and testing.
-
-
+All matrices are in CSR format. The code contains different CUDA kernels for multiply sparse matrix vs dense vector and sparse matrix vs another sparse matrix.  It contains several cuda kernel for sparse matrix dense vector product and sparse matrix sparse matrix product. 
 
 
+Author: Krzysztof Sopyła (ksirg@wp.pl)
+
+If you want to use it or find any bug please let me know.
